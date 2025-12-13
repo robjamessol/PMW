@@ -1,0 +1,1496 @@
+{
+  "version": "1.0",
+  "exportedFrom": "Workout Program 2024.xlsm",
+  "muscleGroups": [
+    {
+      "id": "abs",
+      "name": "ABS",
+      "exercises": [
+        {
+          "id": "abs_1",
+          "name": "ABS 1",
+          "displayName": "1",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "abs"
+        },
+        {
+          "id": "abs_2",
+          "name": "sa",
+          "displayName": "sa",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "abs"
+        },
+        {
+          "id": "abs_3",
+          "name": "ABS LOWER 1",
+          "displayName": "LOWER 1",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "abs"
+        },
+        {
+          "id": "abs_4",
+          "name": "ABS UPPER 1",
+          "displayName": "UPPER 1",
+          "category": "C",
+          "enabled": true,
+          "muscleGroup": "abs"
+        }
+      ]
+    },
+    {
+      "id": "back",
+      "name": "BACK",
+      "exercises": [
+        {
+          "id": "back_1",
+          "name": "BACK Bent over Dumbbell Rows",
+          "displayName": "Bent over Dumbbell Rows",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "back"
+        },
+        {
+          "id": "back_2",
+          "name": "BACK Cable Rows",
+          "displayName": "Cable Rows",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "back"
+        },
+        {
+          "id": "back_3",
+          "name": "BACK Deadlifts",
+          "displayName": "Deadlifts",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "back"
+        },
+        {
+          "id": "back_4",
+          "name": "BACK Lat Pulldown Close Grip",
+          "displayName": "Lat Pulldown Close Grip",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "back"
+        },
+        {
+          "id": "back_5",
+          "name": "BACK Lat Pulldown Revers Grip",
+          "displayName": "Lat Pulldown Revers Grip",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "back"
+        },
+        {
+          "id": "back_6",
+          "name": "BACK Lat Pulldown Wide Grip",
+          "displayName": "Lat Pulldown Wide Grip",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "back"
+        },
+        {
+          "id": "back_7",
+          "name": "BACK T Bar Row",
+          "displayName": "T Bar Row",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "back"
+        },
+        {
+          "id": "back_8",
+          "name": "BACK Rack Pulls",
+          "displayName": "Rack Pulls",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "back"
+        },
+        {
+          "id": "back_9",
+          "name": "BACK Bent over Barbell Rows",
+          "displayName": "Bent over Barbell Rows",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "back"
+        },
+        {
+          "id": "back_10",
+          "name": "BACK T Bar Row Machine",
+          "displayName": "T Bar Row Machine",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "back"
+        },
+        {
+          "id": "back_11",
+          "name": "BACK Bent over Dummbell row single arm",
+          "displayName": "Bent over Dummbell row single arm",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "back"
+        },
+        {
+          "id": "back_12",
+          "name": "BACK Machine Row",
+          "displayName": "Machine Row",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "back"
+        },
+        {
+          "id": "back_13",
+          "name": "BACK Cable Rows Wide Grip",
+          "displayName": "Cable Rows Wide Grip",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "back"
+        },
+        {
+          "id": "back_14",
+          "name": "BACK Chin Ups Weighted",
+          "displayName": "Chin Ups Weighted",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "back"
+        },
+        {
+          "id": "back_15",
+          "name": "BACK Inverted Row",
+          "displayName": "Inverted Row",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "back"
+        },
+        {
+          "id": "back_16",
+          "name": "BACK Lat Pulldowns Behind Head",
+          "displayName": "Lat Pulldowns Behind Head",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "back"
+        },
+        {
+          "id": "back_17",
+          "name": "BACK Pull-ups Weighted",
+          "displayName": "Pull-ups Weighted",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "back"
+        },
+        {
+          "id": "back_18",
+          "name": "BACK Row Smith Machine",
+          "displayName": "Row Smith Machine",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "back"
+        },
+        {
+          "id": "back_19",
+          "name": "BACK Cable Row Single Arm",
+          "displayName": "Cable Row Single Arm",
+          "category": "C",
+          "enabled": true,
+          "muscleGroup": "back"
+        },
+        {
+          "id": "back_20",
+          "name": "BACK Machine Row Single Arm",
+          "displayName": "Machine Row Single Arm",
+          "category": "C",
+          "enabled": true,
+          "muscleGroup": "back"
+        },
+        {
+          "id": "back_21",
+          "name": "BACK Row Single Arm Smith Machine",
+          "displayName": "Row Single Arm Smith Machine",
+          "category": "C",
+          "enabled": true,
+          "muscleGroup": "back"
+        },
+        {
+          "id": "back_22",
+          "name": "BACK Good Mornings",
+          "displayName": "Good Mornings",
+          "category": "C",
+          "enabled": true,
+          "muscleGroup": "back"
+        },
+        {
+          "id": "back_23",
+          "name": "BACK Lower Back Extensions",
+          "displayName": "Lower Back Extensions",
+          "category": "C",
+          "enabled": true,
+          "muscleGroup": "back"
+        },
+        {
+          "id": "back_24",
+          "name": "BACK Single Lat Cable Pulldowns",
+          "displayName": "Single Lat Cable Pulldowns",
+          "category": "C",
+          "enabled": true,
+          "muscleGroup": "back"
+        }
+      ]
+    },
+    {
+      "id": "biceps",
+      "name": "BICEPS",
+      "exercises": [
+        {
+          "id": "biceps_1",
+          "name": "BICEPS 1",
+          "displayName": "1",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "biceps"
+        },
+        {
+          "id": "biceps_2",
+          "name": "BICEPS Barbell Curls Close Grip",
+          "displayName": "Barbell Curls Close Grip",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "biceps"
+        },
+        {
+          "id": "biceps_3",
+          "name": "BICEPS Barbell Curls Wide Grip",
+          "displayName": "Barbell Curls Wide Grip",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "biceps"
+        },
+        {
+          "id": "biceps_4",
+          "name": "BICEPS Cable Curls Bar",
+          "displayName": "Cable Curls Bar",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "biceps"
+        },
+        {
+          "id": "biceps_5",
+          "name": "BICEPS Cable Curls Preacher",
+          "displayName": "Cable Curls Preacher",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "biceps"
+        },
+        {
+          "id": "biceps_6",
+          "name": "BICEPS Concentration Curls",
+          "displayName": "Concentration Curls",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "biceps"
+        },
+        {
+          "id": "biceps_7",
+          "name": "BICEPS Dumbbell Curls Decline",
+          "displayName": "Dumbbell Curls Decline",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "biceps"
+        },
+        {
+          "id": "biceps_8",
+          "name": "BICEPS Dumbbell Curls Incline",
+          "displayName": "Dumbbell Curls Incline",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "biceps"
+        },
+        {
+          "id": "biceps_9",
+          "name": "BICEPS Dumbbell Curls Seated",
+          "displayName": "Dumbbell Curls Seated",
+          "category": "B",
+          "enabled": false,
+          "muscleGroup": "biceps"
+        },
+        {
+          "id": "biceps_10",
+          "name": "BICEPS Dumbbell Curls Standing",
+          "displayName": "Dumbbell Curls Standing",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "biceps"
+        },
+        {
+          "id": "biceps_11",
+          "name": "BICEPS Hammer Curls",
+          "displayName": "Hammer Curls",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "biceps"
+        },
+        {
+          "id": "biceps_12",
+          "name": "BICEPS Hammer Curls Cross Body",
+          "displayName": "Hammer Curls Cross Body",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "biceps"
+        },
+        {
+          "id": "biceps_13",
+          "name": "BICEPS Machine Curls",
+          "displayName": "Machine Curls",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "biceps"
+        },
+        {
+          "id": "biceps_14",
+          "name": "BICEPS Preacher Curls Ezy Bar",
+          "displayName": "Preacher Curls Ezy Bar",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "biceps"
+        },
+        {
+          "id": "biceps_15",
+          "name": "BICEPS Cable Curls from bottom",
+          "displayName": "Cable Curls from bottom",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "biceps"
+        },
+        {
+          "id": "biceps_16",
+          "name": "BICEPS Cable Curls Overhead",
+          "displayName": "Cable Curls Overhead",
+          "category": "C",
+          "enabled": true,
+          "muscleGroup": "biceps"
+        },
+        {
+          "id": "biceps_17",
+          "name": "BICEPS Cable Curls Single Arm",
+          "displayName": "Cable Curls Single Arm",
+          "category": "C",
+          "enabled": true,
+          "muscleGroup": "biceps"
+        },
+        {
+          "id": "biceps_18",
+          "name": "BICEPS Cable Curls Squatting",
+          "displayName": "Cable Curls Squatting",
+          "category": "C",
+          "enabled": true,
+          "muscleGroup": "biceps"
+        },
+        {
+          "id": "biceps_19",
+          "name": "BICEPS Cable hammer Curls Rope",
+          "displayName": "Cable hammer Curls Rope",
+          "category": "C",
+          "enabled": true,
+          "muscleGroup": "biceps"
+        },
+        {
+          "id": "biceps_20",
+          "name": "BICEPS Drag Curls",
+          "displayName": "Drag Curls",
+          "category": "C",
+          "enabled": true,
+          "muscleGroup": "biceps"
+        },
+        {
+          "id": "biceps_21",
+          "name": "BICEPS Preacher Curls Dumbbell",
+          "displayName": "Preacher Curls Dumbbell",
+          "category": "C",
+          "enabled": true,
+          "muscleGroup": "biceps"
+        },
+        {
+          "id": "biceps_22",
+          "name": "BICEPS Preacher Curls Hammer",
+          "displayName": "Preacher Curls Hammer",
+          "category": "C",
+          "enabled": true,
+          "muscleGroup": "biceps"
+        },
+        {
+          "id": "biceps_23",
+          "name": "BICEPS Spider Curls",
+          "displayName": "Spider Curls",
+          "category": "C",
+          "enabled": true,
+          "muscleGroup": "biceps"
+        }
+      ]
+    },
+    {
+      "id": "chest",
+      "name": "CHEST",
+      "exercises": [
+        {
+          "id": "chest_1",
+          "name": "CHEST Bench Press Decline Dumbbell",
+          "displayName": "Bench Press Decline Dumbbell",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "chest"
+        },
+        {
+          "id": "chest_2",
+          "name": "CHEST Bench Press Flat Barbell",
+          "displayName": "Bench Press Flat Barbell",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "chest"
+        },
+        {
+          "id": "chest_3",
+          "name": "CHEST Bench Press Flat Dumbbell",
+          "displayName": "Bench Press Flat Dumbbell",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "chest"
+        },
+        {
+          "id": "chest_4",
+          "name": "CHEST Bench Press Incline Barbell",
+          "displayName": "Bench Press Incline Barbell",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "chest"
+        },
+        {
+          "id": "chest_5",
+          "name": "CHEST Bench Press Incline Dumbbell",
+          "displayName": "Bench Press Incline Dumbbell",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "chest"
+        },
+        {
+          "id": "chest_6",
+          "name": "CHEST Bench Press Incline Smith Machine",
+          "displayName": "Bench Press Incline Smith Machine",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "chest"
+        },
+        {
+          "id": "chest_7",
+          "name": "CHEST Bench Press Flat Smith Machine",
+          "displayName": "Bench Press Flat Smith Machine",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "chest"
+        },
+        {
+          "id": "chest_8",
+          "name": "CHEST Bench Press Decline Barbell",
+          "displayName": "Bench Press Decline Barbell",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "chest"
+        },
+        {
+          "id": "chest_9",
+          "name": "CHEST Bench Press Squeeze Dumbbell",
+          "displayName": "Bench Press Squeeze Dumbbell",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "chest"
+        },
+        {
+          "id": "chest_10",
+          "name": "CHEST Cable Fly\u2019s High",
+          "displayName": "Cable Fly\u2019s High",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "chest"
+        },
+        {
+          "id": "chest_11",
+          "name": "CHEST Cable Fly\u2019s Low",
+          "displayName": "Cable Fly\u2019s Low",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "chest"
+        },
+        {
+          "id": "chest_12",
+          "name": "CHEST Cable Fly\u2019s Lying",
+          "displayName": "Cable Fly\u2019s Lying",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "chest"
+        },
+        {
+          "id": "chest_13",
+          "name": "CHEST Cable Fly\u2019s Mid",
+          "displayName": "Cable Fly\u2019s Mid",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "chest"
+        },
+        {
+          "id": "chest_14",
+          "name": "CHEST Cable Fly\u2019s Seated",
+          "displayName": "Cable Fly\u2019s Seated",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "chest"
+        },
+        {
+          "id": "chest_15",
+          "name": "CHEST Chest Press Seated",
+          "displayName": "Chest Press Seated",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "chest"
+        },
+        {
+          "id": "chest_16",
+          "name": "CHEST Chest Press Seated Incline",
+          "displayName": "Chest Press Seated Incline",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "chest"
+        },
+        {
+          "id": "chest_17",
+          "name": "CHEST Dips for Chest",
+          "displayName": "Dips for Chest",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "chest"
+        },
+        {
+          "id": "chest_18",
+          "name": "CHEST Fly\u2019s Incline Dumbbell",
+          "displayName": "Fly\u2019s Incline Dumbbell",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "chest"
+        },
+        {
+          "id": "chest_19",
+          "name": "CHEST Fly\u2019s Lying Dumbbell",
+          "displayName": "Fly\u2019s Lying Dumbbell",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "chest"
+        },
+        {
+          "id": "chest_20",
+          "name": "CHEST Pec Deck",
+          "displayName": "Pec Deck",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "chest"
+        },
+        {
+          "id": "chest_21",
+          "name": "CHEST Guillotine Bench Press Smith Machine",
+          "displayName": "Guillotine Bench Press Smith Machine",
+          "category": "C",
+          "enabled": true,
+          "muscleGroup": "chest"
+        },
+        {
+          "id": "chest_22",
+          "name": "CHEST Landmine Press",
+          "displayName": "Landmine Press",
+          "category": "C",
+          "enabled": true,
+          "muscleGroup": "chest"
+        },
+        {
+          "id": "chest_23",
+          "name": "CHEST Pullover Dumbbell",
+          "displayName": "Pullover Dumbbell",
+          "category": "C",
+          "enabled": true,
+          "muscleGroup": "chest"
+        },
+        {
+          "id": "chest_24",
+          "name": "CHEST Push Ups",
+          "displayName": "Push Ups",
+          "category": "C",
+          "enabled": true,
+          "muscleGroup": "chest"
+        }
+      ]
+    },
+    {
+      "id": "legs",
+      "name": "LEGS",
+      "exercises": [
+        {
+          "id": "legs_1",
+          "name": "LEGS Deadlift Romanian",
+          "displayName": "Deadlift Romanian",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_2",
+          "name": "LEGS Deadlift Stiff Legged Dumbbells",
+          "displayName": "Deadlift Stiff Legged Dumbbells",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_3",
+          "name": "LEGS Deadlift Sumo",
+          "displayName": "Deadlift Sumo",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_4",
+          "name": "LEGS Deadlifts",
+          "displayName": "Deadlifts",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_5",
+          "name": "LEGS Hang Clean Barbell",
+          "displayName": "Hang Clean Barbell",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_6",
+          "name": "LEGS Leg Press 45 Deg",
+          "displayName": "Leg Press 45 Deg",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_7",
+          "name": "LEGS Leg Press 45 Deg Narrow Stance",
+          "displayName": "Leg Press 45 Deg Narrow Stance",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_8",
+          "name": "LEGS Leg Press 45 Deg Wide Stance",
+          "displayName": "Leg Press 45 Deg Wide Stance",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_9",
+          "name": "LEGS Power Snatch",
+          "displayName": "Power Snatch",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_10",
+          "name": "LEGS Smith Machine Squat",
+          "displayName": "Smith Machine Squat",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_11",
+          "name": "LEGS Snatch Dumbbell",
+          "displayName": "Snatch Dumbbell",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_12",
+          "name": "LEGS Squat Sumo",
+          "displayName": "Squat Sumo",
+          "category": "A",
+          "enabled": false,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_13",
+          "name": "LEGS Squats Back",
+          "displayName": "Squats Back",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_14",
+          "name": "LEGS Deadlift Stiff Legged",
+          "displayName": "Deadlift Stiff Legged",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_15",
+          "name": "LEGS Squats Front",
+          "displayName": "Squats Front",
+          "category": "B",
+          "enabled": false,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_16",
+          "name": "LEGS Leg Press 45 Deg One Legged",
+          "displayName": "Leg Press 45 Deg One Legged",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_17",
+          "name": "LEGS Hack Squat Barbell",
+          "displayName": "Hack Squat Barbell",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_18",
+          "name": "LEGS Hack Squat Machine",
+          "displayName": "Hack Squat Machine",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_19",
+          "name": "LEGS Hack Squat Narrow Stance",
+          "displayName": "Hack Squat Narrow Stance",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_20",
+          "name": "LEGS Hack Squat Wide Stance",
+          "displayName": "Hack Squat Wide Stance",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_21",
+          "name": "LEGS Leg Press Machine",
+          "displayName": "Leg Press Machine",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_22",
+          "name": "LEGS Lunges Barbell",
+          "displayName": "Lunges Barbell",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_23",
+          "name": "LEGS Lunges Dumbbell",
+          "displayName": "Lunges Dumbbell",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_24",
+          "name": "LEGS One Arm Overhead Squat Kettle Bell",
+          "displayName": "One Arm Overhead Squat Kettle Bell",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_25",
+          "name": "LEGS One Legged Squat Dumbbell",
+          "displayName": "One Legged Squat Dumbbell",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_26",
+          "name": "LEGS Overhead Squats Barbell",
+          "displayName": "Overhead Squats Barbell",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_27",
+          "name": "LEGS Side Squat Barbell",
+          "displayName": "Side Squat Barbell",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_28",
+          "name": "LEGS Side Squat Dumbbell",
+          "displayName": "Side Squat Dumbbell",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_29",
+          "name": "LEGS One Legged Squat Barbell",
+          "displayName": "One Legged Squat Barbell",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_30",
+          "name": "LEGS Smith Machine Lunges",
+          "displayName": "Smith Machine Lunges",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_31",
+          "name": "LEGS Thrusters Dumbbells",
+          "displayName": "Thrusters Dumbbells",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_32",
+          "name": "LEGS V Squat",
+          "displayName": "V Squat",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_34",
+          "name": "LEGS Thrusters Barbell",
+          "displayName": "Thrusters Barbell",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_35",
+          "name": "LEGS Leg Curl",
+          "displayName": "Leg Curl",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_36",
+          "name": "LEGS Leg Extensions",
+          "displayName": "Leg Extensions",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_37",
+          "name": "LEGS SINGLE LEG CURLS",
+          "displayName": "SINGLE LEG CURLS",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_38",
+          "name": "LEGS SINGLE LEG KICKBACKS",
+          "displayName": "SINGLE LEG KICKBACKS",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_39",
+          "name": "LEGS REVERSE V SQUATS",
+          "displayName": "REVERSE V SQUATS",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_40",
+          "name": "LEGS AIR SQUATS",
+          "displayName": "AIR SQUATS",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_41",
+          "name": "LEGS WALL BALLS",
+          "displayName": "WALL BALLS",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_42",
+          "name": "LEGS DUMBBELL STEP UPS",
+          "displayName": "DUMBBELL STEP UPS",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_43",
+          "name": "LEGS BURPEE",
+          "displayName": "BURPEE",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_44",
+          "name": "LEGS JUMPING SQUATS",
+          "displayName": "JUMPING SQUATS",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_45",
+          "name": "LEGS Calf Raises Seated",
+          "displayName": "Calf Raises Seated",
+          "category": "C",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_46",
+          "name": "LEGS Calf Raises Standing",
+          "displayName": "Calf Raises Standing",
+          "category": "C",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_47",
+          "name": "LEGS Leg Press 45 Deg Calf Press",
+          "displayName": "Leg Press 45 Deg Calf Press",
+          "category": "C",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_48",
+          "name": "LEGS Leg Press Single Leg Calf Extensions",
+          "displayName": "Leg Press Single Leg Calf Extensions",
+          "category": "C",
+          "enabled": true,
+          "muscleGroup": "legs"
+        },
+        {
+          "id": "legs_49",
+          "name": "LEGS Calf Raises Seated 45 Deg",
+          "displayName": "Calf Raises Seated 45 Deg",
+          "category": "C",
+          "enabled": true,
+          "muscleGroup": "legs"
+        }
+      ]
+    },
+    {
+      "id": "triceps",
+      "name": "TRICEPS",
+      "exercises": [
+        {
+          "id": "triceps_1",
+          "name": "TRICEPS 1",
+          "displayName": "1",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "triceps"
+        },
+        {
+          "id": "triceps_2",
+          "name": "TRICEPS Bench Press Close Grip",
+          "displayName": "Bench Press Close Grip",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "triceps"
+        },
+        {
+          "id": "triceps_3",
+          "name": "TRICEPS Dips Seated",
+          "displayName": "Dips Seated",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "triceps"
+        },
+        {
+          "id": "triceps_4",
+          "name": "TRICEPS Dips Upright",
+          "displayName": "Dips Upright",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "triceps"
+        },
+        {
+          "id": "triceps_5",
+          "name": "TRICEPS Skull Crushers",
+          "displayName": "Skull Crushers",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "triceps"
+        },
+        {
+          "id": "triceps_6",
+          "name": "TRICEPS Triceps Bar Pushdowns",
+          "displayName": "Triceps Bar Pushdowns",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "triceps"
+        },
+        {
+          "id": "triceps_7",
+          "name": "TRICEPS Triceps Extensions Lying Dumbbell",
+          "displayName": "Triceps Extensions Lying Dumbbell",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "triceps"
+        },
+        {
+          "id": "triceps_8",
+          "name": "TRICEPS Triceps Extensions Machine",
+          "displayName": "Triceps Extensions Machine",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "triceps"
+        },
+        {
+          "id": "triceps_9",
+          "name": "TRICEPS Triceps Extensions Overhead Barbell",
+          "displayName": "Triceps Extensions Overhead Barbell",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "triceps"
+        },
+        {
+          "id": "triceps_10",
+          "name": "TRICEPS Triceps Extensions Overhead Cable",
+          "displayName": "Triceps Extensions Overhead Cable",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "triceps"
+        },
+        {
+          "id": "triceps_11",
+          "name": "TRICEPS Triceps Extensions Two Arm Dumbbell",
+          "displayName": "Triceps Extensions Two Arm Dumbbell",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "triceps"
+        },
+        {
+          "id": "triceps_12",
+          "name": "TRICEPS Triceps Pushdowns V-bar",
+          "displayName": "Triceps Pushdowns V-bar",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "triceps"
+        },
+        {
+          "id": "triceps_13",
+          "name": "TRICEPS Triceps Rope Pushdowns",
+          "displayName": "Triceps Rope Pushdowns",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "triceps"
+        },
+        {
+          "id": "triceps_14",
+          "name": "TRICEPS One Arm Cable Reverse",
+          "displayName": "One Arm Cable Reverse",
+          "category": "C",
+          "enabled": true,
+          "muscleGroup": "triceps"
+        },
+        {
+          "id": "triceps_15",
+          "name": "TRICEPS Pushups Diamond",
+          "displayName": "Pushups Diamond",
+          "category": "C",
+          "enabled": true,
+          "muscleGroup": "triceps"
+        },
+        {
+          "id": "triceps_16",
+          "name": "TRICEPS Reverse Bar Triceps Extensions",
+          "displayName": "Reverse Bar Triceps Extensions",
+          "category": "C",
+          "enabled": true,
+          "muscleGroup": "triceps"
+        },
+        {
+          "id": "triceps_17",
+          "name": "TRICEPS Triceps Extensions One Arm Dumbbell",
+          "displayName": "Triceps Extensions One Arm Dumbbell",
+          "category": "C",
+          "enabled": true,
+          "muscleGroup": "triceps"
+        },
+        {
+          "id": "triceps_18",
+          "name": "TRICEPS Triceps Kickbacks Cable",
+          "displayName": "Triceps Kickbacks Cable",
+          "category": "C",
+          "enabled": true,
+          "muscleGroup": "triceps"
+        },
+        {
+          "id": "triceps_19",
+          "name": "TRICEPS Triceps Kickbacks Dumbbell",
+          "displayName": "Triceps Kickbacks Dumbbell",
+          "category": "C",
+          "enabled": true,
+          "muscleGroup": "triceps"
+        }
+      ]
+    },
+    {
+      "id": "shoulders",
+      "name": "SHOULDERS",
+      "exercises": [
+        {
+          "id": "shoulders_1",
+          "name": "SHOULDERS Dumbbell Press Neutral Grip",
+          "displayName": "Dumbbell Press Neutral Grip",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "shoulders"
+        },
+        {
+          "id": "shoulders_2",
+          "name": "SHOULDERS Overhead Press Barbell",
+          "displayName": "Overhead Press Barbell",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "shoulders"
+        },
+        {
+          "id": "shoulders_3",
+          "name": "SHOULDERS Shoulder Press Machine",
+          "displayName": "Shoulder Press Machine",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "shoulders"
+        },
+        {
+          "id": "shoulders_4",
+          "name": "SHOULDERS Shoulder Press Smith Machine",
+          "displayName": "Shoulder Press Smith Machine",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "shoulders"
+        },
+        {
+          "id": "shoulders_5",
+          "name": "SHOULDERS Shoulder Press Arnolds",
+          "displayName": "Shoulder Press Arnolds",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "shoulders"
+        },
+        {
+          "id": "shoulders_6",
+          "name": "SHOULDERS Military Dumbell Press",
+          "displayName": "Military Dumbell Press",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "shoulders"
+        },
+        {
+          "id": "shoulders_7",
+          "name": "SHOULDERS Bus Drivers",
+          "displayName": "Bus Drivers",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "shoulders"
+        },
+        {
+          "id": "shoulders_8",
+          "name": "SHOULDERS Cable Raises Front",
+          "displayName": "Cable Raises Front",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "shoulders"
+        },
+        {
+          "id": "shoulders_9",
+          "name": "SHOULDERS Cable Raises Side",
+          "displayName": "Cable Raises Side",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "shoulders"
+        },
+        {
+          "id": "shoulders_10",
+          "name": "SHOULDERS Cable Rear-delt Fly",
+          "displayName": "Cable Rear-delt Fly",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "shoulders"
+        },
+        {
+          "id": "shoulders_11",
+          "name": "SHOULDERS Dumbbell Lateral Raises Bent over",
+          "displayName": "Dumbbell Lateral Raises Bent over",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "shoulders"
+        },
+        {
+          "id": "shoulders_12",
+          "name": "SHOULDERS Dumbbell Raises Front",
+          "displayName": "Dumbbell Raises Front",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "shoulders"
+        },
+        {
+          "id": "shoulders_13",
+          "name": "SHOULDERS Dumbbell Raises Side",
+          "displayName": "Dumbbell Raises Side",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "shoulders"
+        },
+        {
+          "id": "shoulders_14",
+          "name": "SHOULDERS Front Raises Barbell",
+          "displayName": "Front Raises Barbell",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "shoulders"
+        },
+        {
+          "id": "shoulders_15",
+          "name": "SHOULDERS Rear Delt Revers Fly Machine",
+          "displayName": "Rear Delt Revers Fly Machine",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "shoulders"
+        },
+        {
+          "id": "shoulders_16",
+          "name": "SHOULDERS Shoulder Press Dumbbell One Arm",
+          "displayName": "Shoulder Press Dumbbell One Arm",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "shoulders"
+        },
+        {
+          "id": "shoulders_17",
+          "name": "SHOULDERS Upright Row Barbell",
+          "displayName": "Upright Row Barbell",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "shoulders"
+        },
+        {
+          "id": "shoulders_18",
+          "name": "SHOULDERS Upright Row Cable",
+          "displayName": "Upright Row Cable",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "shoulders"
+        },
+        {
+          "id": "shoulders_19",
+          "name": "SHOULDERS Upright Row Smith Machine",
+          "displayName": "Upright Row Smith Machine",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "shoulders"
+        },
+        {
+          "id": "shoulders_20",
+          "name": "SHOULDERS Shoulder Press Behind Head SM",
+          "displayName": "Shoulder Press Behind Head SM",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "shoulders"
+        },
+        {
+          "id": "shoulders_21",
+          "name": "SHOULDERS Face Pulls",
+          "displayName": "Face Pulls",
+          "category": "C",
+          "enabled": true,
+          "muscleGroup": "shoulders"
+        },
+        {
+          "id": "shoulders_22",
+          "name": "SHOULDERS Shrugs Barbell",
+          "displayName": "Shrugs Barbell",
+          "category": "C",
+          "enabled": true,
+          "muscleGroup": "shoulders"
+        },
+        {
+          "id": "shoulders_23",
+          "name": "SHOULDERS Shrugs Dumbbells",
+          "displayName": "Shrugs Dumbbells",
+          "category": "C",
+          "enabled": true,
+          "muscleGroup": "shoulders"
+        }
+      ]
+    },
+    {
+      "id": "full_body",
+      "name": "FULL BODY",
+      "exercises": [
+        {
+          "id": "full_body_1",
+          "name": "FULL 1",
+          "displayName": "FULL 1",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "full_body"
+        },
+        {
+          "id": "full_body_2",
+          "name": "FULL 11",
+          "displayName": "FULL 11",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "full_body"
+        },
+        {
+          "id": "full_body_3",
+          "name": "FULL 19",
+          "displayName": "FULL 19",
+          "category": "C",
+          "enabled": true,
+          "muscleGroup": "full_body"
+        }
+      ]
+    },
+    {
+      "id": "quadriceps",
+      "name": "QUADRICEPS",
+      "exercises": [
+        {
+          "id": "quadriceps_1",
+          "name": "QUADRICEPS 1",
+          "displayName": "1",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "quadriceps"
+        },
+        {
+          "id": "quadriceps_2",
+          "name": "QUADRICEPS 12",
+          "displayName": "12",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "quadriceps"
+        },
+        {
+          "id": "quadriceps_3",
+          "name": "QUADRICEPS 20",
+          "displayName": "20",
+          "category": "C",
+          "enabled": true,
+          "muscleGroup": "quadriceps"
+        }
+      ]
+    },
+    {
+      "id": "calves",
+      "name": "CALVES",
+      "exercises": [
+        {
+          "id": "calves_1",
+          "name": "CALVES 1",
+          "displayName": "1",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "calves"
+        },
+        {
+          "id": "calves_2",
+          "name": "CALVES 12",
+          "displayName": "12",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "calves"
+        },
+        {
+          "id": "calves_3",
+          "name": "CALVES 20",
+          "displayName": "20",
+          "category": "C",
+          "enabled": true,
+          "muscleGroup": "calves"
+        }
+      ]
+    },
+    {
+      "id": "hamstrings",
+      "name": "HAMSTRINGS",
+      "exercises": [
+        {
+          "id": "hamstrings_1",
+          "name": "HAMSTRINGS 1",
+          "displayName": "1",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "hamstrings"
+        },
+        {
+          "id": "hamstrings_2",
+          "name": "saads",
+          "displayName": "saads",
+          "category": "A",
+          "enabled": true,
+          "muscleGroup": "hamstrings"
+        },
+        {
+          "id": "hamstrings_3",
+          "name": "HAMSTRINGS 12",
+          "displayName": "12",
+          "category": "B",
+          "enabled": true,
+          "muscleGroup": "hamstrings"
+        },
+        {
+          "id": "hamstrings_5",
+          "name": "HAMSTRINGS 20",
+          "displayName": "20",
+          "category": "C",
+          "enabled": true,
+          "muscleGroup": "hamstrings"
+        }
+      ]
+    }
+  ]
+}
