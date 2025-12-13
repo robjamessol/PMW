@@ -210,26 +210,68 @@ WorkoutEntry:
 
 ---
 
-## Documents
+## Project Structure
 
-| Document | Description |
-|----------|-------------|
-| [WORKOUT_APP_ANALYSIS.md](./WORKOUT_APP_ANALYSIS.md) | Deep analysis of Excel program structure |
-| [AI_INTEGRATION_STRATEGY.md](./AI_INTEGRATION_STRATEGY.md) | AI features and technical architecture |
-| [program/Workout Program 2024.xlsm](./program/) | Original Excel workout program |
+```
+PMW/
+├── app/                          # React Native app code
+│   ├── components/               # Reusable UI components
+│   ├── screens/                  # Screen components
+│   ├── services/                 # API and business logic
+│   │   ├── supabase.ts          # Supabase client config
+│   │   └── workoutGenerator.ts  # Workout generation logic
+│   ├── hooks/                    # Custom React hooks
+│   ├── utils/                    # Utility functions
+│   ├── types/                    # TypeScript type definitions
+│   │   └── index.ts             # All app types
+│   ├── constants/                # App constants
+│   └── assets/                   # Images, fonts, etc.
+├── docs/                         # Documentation
+│   ├── README.md                # This file
+│   ├── WORKOUT_APP_ANALYSIS.md  # Excel program analysis
+│   ├── AI_INTEGRATION_STRATEGY.md # AI features plan
+│   ├── data/                    # Extracted data
+│   │   ├── exercises.json       # 178 exercises from Excel
+│   │   └── workout-types.json   # Workout type configurations
+│   └── program/                 # Original Excel file
+├── supabase/                    # Database
+│   └── schema.sql              # Complete database schema
+├── App.tsx                      # App entry point
+├── app.json                     # Expo configuration
+├── package.json                 # Dependencies
+└── tsconfig.json               # TypeScript configuration
+```
 
 ---
 
-## Next Steps
+## Documents & Data
 
-1. **Extract exercise database** from Excel into JSON format
-2. **Set up project structure** (React Native + Expo)
-3. **Configure Supabase** (auth, database schema)
-4. **Build core screens** (login, home, muscle select, active workout)
-5. **Implement workout generation** logic
-6. **Add AI integration** (premium features)
-7. **Testing & Polish**
-8. **App Store submission**
+| File | Description |
+|------|-------------|
+| [WORKOUT_APP_ANALYSIS.md](./WORKOUT_APP_ANALYSIS.md) | Deep analysis of Excel program structure |
+| [AI_INTEGRATION_STRATEGY.md](./AI_INTEGRATION_STRATEGY.md) | AI features and technical architecture |
+| [data/exercises.json](./data/exercises.json) | **178 exercises** extracted from Excel |
+| [data/workout-types.json](./data/workout-types.json) | 6 workout types with rep schemes |
+| [supabase/schema.sql](../supabase/schema.sql) | Complete PostgreSQL database schema |
+
+---
+
+## Development Progress
+
+### Completed ✅
+1. ~~Extract exercise database from Excel into JSON~~ → `docs/data/exercises.json`
+2. ~~Set up project structure (React Native + Expo)~~ → `app/` folder
+3. ~~Configure Supabase schema~~ → `supabase/schema.sql`
+4. ~~Define TypeScript types~~ → `app/types/index.ts`
+5. ~~Create workout generation service~~ → `app/services/workoutGenerator.ts`
+
+### Next Steps 🔜
+1. **Set up Supabase project** (create account, run schema.sql)
+2. **Build core screens** (login, home, muscle select, active workout)
+3. **Implement UI components** (exercise cards, set logging, timers)
+4. **Add AI integration** (premium features)
+5. **Testing & Polish**
+6. **App Store submission**
 
 ---
 

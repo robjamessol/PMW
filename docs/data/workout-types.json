@@ -1,0 +1,94 @@
+{
+  "version": "1.0",
+  "workoutTypes": [
+    {
+      "id": "strength_5x5",
+      "name": "5x5 Strength",
+      "description": "Heavy compound movements with 5 sets of 5 reps",
+      "repSchemes": ["5-5-5-5-5"],
+      "setsPerExercise": 5,
+      "restSeconds": 180,
+      "exercisesPerMuscle": {
+        "categoryA": 2,
+        "categoryB": 1,
+        "categoryC": 0
+      },
+      "focus": "strength"
+    },
+    {
+      "id": "hypertrophy_8_12",
+      "name": "8-12 Regular",
+      "description": "Standard hypertrophy training with moderate weight",
+      "repSchemes": ["8-8-8", "8-8-8-8", "10-10-10", "10-10-10-10", "12-12-12"],
+      "setsPerExercise": 4,
+      "restSeconds": 90,
+      "exercisesPerMuscle": {
+        "categoryA": 2,
+        "categoryB": 2,
+        "categoryC": 1
+      },
+      "focus": "hypertrophy"
+    },
+    {
+      "id": "volume",
+      "name": "Volume",
+      "description": "High volume training for maximum muscle stimulus",
+      "repSchemes": ["8-8-8-8-8", "10-10-10-10-10", "12-12-12-12"],
+      "setsPerExercise": 5,
+      "restSeconds": 60,
+      "exercisesPerMuscle": {
+        "categoryA": 2,
+        "categoryB": 2,
+        "categoryC": 2
+      },
+      "focus": "hypertrophy"
+    },
+    {
+      "id": "power_2_6",
+      "name": "2-6 Power",
+      "description": "Low rep explosive power training",
+      "repSchemes": ["2-2-2", "3-3-3", "4-4-4", "5-5-5", "6-6-6"],
+      "setsPerExercise": 4,
+      "restSeconds": 180,
+      "exercisesPerMuscle": {
+        "categoryA": 3,
+        "categoryB": 1,
+        "categoryC": 0
+      },
+      "focus": "power"
+    },
+    {
+      "id": "beginner_10_15",
+      "name": "Beginner 10-15",
+      "description": "Higher reps with lighter weight for beginners",
+      "repSchemes": ["10-10-10", "12-12-12", "15-15-15"],
+      "setsPerExercise": 3,
+      "restSeconds": 60,
+      "exercisesPerMuscle": {
+        "categoryA": 1,
+        "categoryB": 2,
+        "categoryC": 1
+      },
+      "focus": "endurance"
+    },
+    {
+      "id": "light_finish",
+      "name": "8-12 Light Finish",
+      "description": "Hypertrophy with lighter finisher exercises",
+      "repSchemes": ["8-8-8-8", "10-10-10-10", "12-12-12-12"],
+      "setsPerExercise": 4,
+      "restSeconds": 75,
+      "exercisesPerMuscle": {
+        "categoryA": 1,
+        "categoryB": 2,
+        "categoryC": 2
+      },
+      "focus": "hypertrophy"
+    }
+  ],
+  "categoryDescriptions": {
+    "A": "Primary compound movements - heavy, multi-joint exercises",
+    "B": "Secondary movements - machines and isolation exercises",
+    "C": "Accessory/finisher movements - light pump work"
+  }
+}
