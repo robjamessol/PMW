@@ -62,14 +62,16 @@
 ### Version 1.0 (MVP)
 
 **Core Features:**
-- [ ] User authentication (sign up, login, forgot password)
-- [ ] Exercise database (pre-loaded from Excel data)
-- [ ] Muscle group selection
-- [ ] Workout type selection (8-12 REG, 5x5, Volume, etc.)
-- [ ] Dynamic workout generation
-- [ ] Exercise logging (weight, reps per set)
-- [ ] Workout history
-- [ ] "BEAT THIS" targets (previous best display)
+- [x] User authentication (sign up, login, forgot password)
+- [x] Exercise database (pre-loaded from Excel data)
+- [x] Muscle group selection
+- [x] Workout type selection (8-12 REG, 5x5, Volume, etc.)
+- [x] Dynamic workout generation
+- [x] Exercise logging (weight, reps per set)
+- [x] Workout history
+- [x] "BEAT THIS" targets (previous best display)
+- [x] Rest timer with vibration alerts
+- [x] Workout completion summary with stats
 
 **Tier 1 AI Features (Premium):**
 - [ ] Smart workout generation (AI considers recovery, frequency, plateaus)
@@ -259,19 +261,28 @@ PMW/
 ## Development Progress
 
 ### Completed ✅
-1. ~~Extract exercise database from Excel into JSON~~ → `docs/data/exercises.json`
+1. ~~Extract exercise database from Excel into JSON~~ → `docs/data/exercises.json` (178 exercises)
 2. ~~Set up project structure (React Native + Expo)~~ → `app/` folder
 3. ~~Configure Supabase schema~~ → `supabase/schema.sql`
 4. ~~Define TypeScript types~~ → `app/types/index.ts`
 5. ~~Create workout generation service~~ → `app/services/workoutGenerator.ts`
+6. ~~Build all UI screens~~ → 9 screens complete
+   - LoginScreen, SignUpScreen, ForgotPasswordScreen
+   - HomeScreen, MuscleSelectScreen, ActiveWorkoutScreen
+   - WorkoutCompleteScreen, HistoryScreen, SettingsScreen
+7. ~~Create reusable components~~ → Button, Card, Input
+8. ~~Set up navigation~~ → Auth flow + Tab navigation + Stack navigation
+9. ~~Implement theme system~~ → Colors, typography, spacing
+10. ~~Add rest timer with vibration~~ → 90-second default, skip option
 
 ### Next Steps 🔜
 1. **Set up Supabase project** (create account, run schema.sql)
-2. **Build core screens** (login, home, muscle select, active workout)
-3. **Implement UI components** (exercise cards, set logging, timers)
-4. **Add AI integration** (premium features)
-5. **Testing & Polish**
-6. **App Store submission**
+2. **Add environment variables** (.env with Supabase credentials)
+3. **Seed exercise database** (load exercises.json into Supabase)
+4. **Test complete workout flow** (generate → log sets → complete)
+5. **Add AI integration** (Tier 1 premium features)
+6. **Testing & Polish**
+7. **App Store submission**
 
 ---
 
