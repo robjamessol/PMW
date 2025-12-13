@@ -1,4 +1,19 @@
-# AI Integration Strategy for Workout App
+# AI Integration Strategy for Plan My Workout (PMW)
+
+---
+
+## ✅ DECISIONS MADE
+
+| Decision | Choice |
+|----------|--------|
+| **App Name** | Plan My Workout (PMW) |
+| **V1 AI Features** | Tier 1 only (Smart Generation, Intelligent BEAT THIS, Natural Language) |
+| **V2 AI Features** | Tier 2 (AI Coach Chat, Voice Commands, Insights) |
+| **V3 AI Features** | Tier 3 (Form Analysis, Recovery Prediction, Social) |
+| **Monetization** | Freemium - Free app with AI features as premium paid tier |
+| **AI Provider** | TBD (Claude or GPT - decide during implementation) |
+
+---
 
 ## The Problem with Existing Workout Apps
 
@@ -20,7 +35,7 @@ Most workout apps fall into two categories:
 
 ## AI Integration Opportunities
 
-### Tier 1: Core AI Features (Must-Have for Differentiation)
+### Tier 1: Core AI Features → VERSION 1.0 (MVP)
 
 #### 1. Smart Workout Generation
 Instead of pure random selection, AI considers:
@@ -141,7 +156,7 @@ Current system: Shows previous best, user decides target.
 
 ---
 
-### Tier 2: Enhanced AI Features (Differentiators)
+### Tier 2: Enhanced AI Features → VERSION 2.0
 
 #### 4. AI Coach Chat
 
@@ -221,7 +236,7 @@ AI: "Bumping to 190 pounds for this set. Let's see what you've got!"
 
 ---
 
-### Tier 3: Advanced AI Features (Future/Premium)
+### Tier 3: Advanced AI Features → VERSION 3.0+
 
 #### 7. Form Analysis (Camera-Based)
 

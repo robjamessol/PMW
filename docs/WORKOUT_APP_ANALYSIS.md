@@ -1,8 +1,10 @@
-# Workout Program 2024 - Deep Analysis & App Conversion Plan
+# Plan My Workout (PMW) - Technical Analysis
+
+> Based on analysis of Workout Program 2024.xlsm
 
 ## Executive Summary
 
-This document captures my understanding of the Excel-based workout program and how it should translate to an iPhone app. The core concept is a **dynamic workout generator** that:
+This document captures the technical analysis of the Excel-based workout program and how it translates to the **Plan My Workout (PMW)** iPhone app. The core concept is a **dynamic workout generator** that:
 1. Generates unique workouts each session from selected muscle groups
 2. Varies rep/set schemes to optimize progressive overload
 3. Tracks historical performance to show "targets to beat"
