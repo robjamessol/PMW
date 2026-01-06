@@ -32,8 +32,8 @@
       "expo-secure-store"
     ],
     "extra": {
-      "supabaseUrl": "YOUR_SUPABASE_URL",
-      "supabaseAnonKey": "YOUR_SUPABASE_ANON_KEY"
+      "supabaseUrl": "https://nqpdwsgmlzhmvkfjhoff.supabase.co",
+      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xcGR3c2dtbHpobXZrZmpob2ZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NDI3MDksImV4cCI6MjA4MzMxODcwOX0.vuKtc2u_5bvQgj1Fq5sZe5MkGpOqBkjkvAwTWgGb0-c"
     }
   }
 }
