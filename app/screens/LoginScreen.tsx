@@ -2,7 +2,7 @@
  * Login Screen
  */
 
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,7 @@ import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { Colors, Spacing, FontSizes } from '../constants/theme';
 import { supabase } from '../services/supabase';
+import { DevModeContext } from '../../App';
 
 type LoginScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Login'>;
@@ -29,6 +30,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const { setDevMode } = useContext(DevModeContext);
 
   const validate = () => {
     const newErrors: { email?: string; password?: string } = {};
@@ -130,6 +132,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             <Text style={styles.signUpText}> Sign Up</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Dev Mode Button */}
+        <TouchableOpacity
+          style={styles.devButton}
+          onPress={() => setDevMode(true)}
+        >
+          <Text style={styles.devButtonText}>Skip Login (Dev Mode)</Text>
+        </TouchableOpacity>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -192,5 +202,18 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontSize: FontSizes.md,
     fontWeight: '600',
+  },
+  devButton: {
+    marginTop: Spacing.xl,
+    padding: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.warning,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  devButtonText: {
+    color: Colors.warning,
+    fontSize: FontSizes.sm,
+    fontWeight: '500',
   },
 });

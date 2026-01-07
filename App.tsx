@@ -117,9 +117,16 @@ function LoadingScreen() {
   );
 }
 
+// Dev mode context for bypassing auth
+export const DevModeContext = React.createContext<{
+  devMode: boolean;
+  setDevMode: (value: boolean) => void;
+}>({ devMode: false, setDevMode: () => {} });
+
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [devMode, setDevMode] = useState(false);
 
   useEffect(() => {
     // Get initial session
@@ -147,22 +154,25 @@ export default function App() {
     );
   }
 
+  const isAuthenticated = session || devMode;
+
   return (
     <SafeAreaProvider>
-      <NavigationContainer>
-        <Stack.Navigator
-          screenOptions={{
-            headerStyle: {
-              backgroundColor: Colors.background,
-            },
-            headerTintColor: Colors.text,
-            headerTitleStyle: {
-              fontWeight: '600',
-            },
-            headerBackTitleVisible: false,
-          }}
-        >
-          {!session ? (
+      <DevModeContext.Provider value={{ devMode, setDevMode }}>
+        <NavigationContainer>
+          <Stack.Navigator
+            screenOptions={{
+              headerStyle: {
+                backgroundColor: Colors.background,
+              },
+              headerTintColor: Colors.text,
+              headerTitleStyle: {
+                fontWeight: '600',
+              },
+              headerBackTitleVisible: false,
+            }}
+          >
+            {!isAuthenticated ? (
             // Auth Stack
             <>
               <Stack.Screen
@@ -231,9 +241,10 @@ export default function App() {
               />
             </>
           )}
-        </Stack.Navigator>
-        <StatusBar style="light" />
-      </NavigationContainer>
+          </Stack.Navigator>
+          <StatusBar style="light" />
+        </NavigationContainer>
+      </DevModeContext.Provider>
     </SafeAreaProvider>
   );
 }
