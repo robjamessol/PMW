@@ -21,6 +21,7 @@ import { Colors, Spacing, FontSizes, BorderRadius } from '../constants/theme';
 import { MAX_MUSCLE_GROUPS_PER_WORKOUT } from '../constants';
 import { supabase } from '../services/supabase';
 import { generateWorkout, createWorkoutSession } from '../services/workoutGenerator';
+import exercisesData from '../../docs/data/exercises.json';
 
 type MuscleSelectScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'MuscleSelect'>;
@@ -123,6 +124,86 @@ export const MuscleSelectScreen: React.FC<MuscleSelectScreenProps> = ({
     }
   };
 
+  // Helper to shuffle array
+  const shuffleArray = <T,>(array: T[]): T[] => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+
+  // Generate workout locally for dev mode
+  const generateLocalWorkout = () => {
+    const generatedExercises: any[] = [];
+
+    for (const muscleGroupId of selectedMuscles) {
+      // Find muscle group in local data
+      const muscleGroup = exercisesData.muscleGroups.find(
+        (mg) => mg.id === muscleGroupId
+      );
+      if (!muscleGroup) continue;
+
+      const exercises = muscleGroup.exercises;
+
+      // Separate by category
+      const categoryA = exercises.filter((e) => e.category === 'A');
+      const categoryB = exercises.filter((e) => e.category === 'B');
+      const categoryC = exercises.filter((e) => e.category === 'C');
+
+      // Randomly select exercises based on workout type config
+      const selectedA = shuffleArray(categoryA).slice(
+        0,
+        selectedWorkoutType.exercisesPerMuscle.categoryA
+      );
+      const selectedB = shuffleArray(categoryB).slice(
+        0,
+        selectedWorkoutType.exercisesPerMuscle.categoryB
+      );
+      const selectedC = shuffleArray(categoryC).slice(
+        0,
+        selectedWorkoutType.exercisesPerMuscle.categoryC
+      );
+
+      const selectedExercises = [...selectedA, ...selectedB, ...selectedC];
+
+      // For each selected exercise, assign rep scheme
+      for (const exercise of selectedExercises) {
+        const repScheme =
+          selectedWorkoutType.repSchemes[
+            Math.floor(Math.random() * selectedWorkoutType.repSchemes.length)
+          ];
+
+        const repsPerSet = repScheme.split('-').map((r) => parseInt(r, 10));
+
+        const sets = repsPerSet.map((targetReps, index) => ({
+          setNumber: index + 1,
+          targetReps,
+          achievedReps: null,
+          weight: null,
+          completed: false,
+        }));
+
+        generatedExercises.push({
+          exercise: {
+            id: exercise.id,
+            name: exercise.name,
+            displayName: exercise.displayName,
+            category: exercise.category,
+            muscleGroup: exercise.muscleGroup,
+          },
+          assignedRepScheme: repScheme,
+          sets,
+          previousBest: null,
+          targetWeights: Array(repsPerSet.length).fill(0),
+        });
+      }
+    }
+
+    return shuffleArray(generatedExercises);
+  };
+
   const handleGenerate = async () => {
     if (selectedMuscles.length === 0) {
       Alert.alert('Select Muscles', 'Please select at least one muscle group');
@@ -131,29 +212,43 @@ export const MuscleSelectScreen: React.FC<MuscleSelectScreenProps> = ({
 
     setLoading(true);
     try {
+      // Check if user is authenticated
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
 
-      // Generate the workout
-      const exercises = await generateWorkout(
-        user.id,
-        selectedMuscles,
-        selectedWorkoutType
-      );
+      if (user) {
+        // Authenticated - use database
+        const exercises = await generateWorkout(
+          user.id,
+          selectedMuscles,
+          selectedWorkoutType
+        );
 
-      // Create session in database
-      const sessionId = await createWorkoutSession(
-        user.id,
-        selectedMuscles,
-        selectedWorkoutType,
-        exercises
-      );
+        const sessionId = await createWorkoutSession(
+          user.id,
+          selectedMuscles,
+          selectedWorkoutType,
+          exercises
+        );
 
-      // Navigate to active workout
-      navigation.replace('ActiveWorkout', { sessionId });
+        navigation.replace('ActiveWorkout', { sessionId });
+      } else {
+        // Dev mode - generate locally
+        const exercises = generateLocalWorkout();
+
+        // Navigate with local exercises data
+        navigation.replace('ActiveWorkout', {
+          sessionId: 'dev-mode',
+          localExercises: exercises,
+        } as any);
+      }
     } catch (error) {
       console.error('Error generating workout:', error);
-      Alert.alert('Error', 'Failed to generate workout. Please try again.');
+      // Fall back to local generation
+      const exercises = generateLocalWorkout();
+      navigation.replace('ActiveWorkout', {
+        sessionId: 'dev-mode',
+        localExercises: exercises,
+      } as any);
     } finally {
       setLoading(false);
     }

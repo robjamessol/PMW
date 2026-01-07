@@ -33,7 +33,8 @@ export const ActiveWorkoutScreen: React.FC<ActiveWorkoutScreenProps> = ({
   navigation,
   route,
 }) => {
-  const { sessionId } = route.params;
+  const { sessionId, localExercises } = route.params as any;
+  const isDevMode = sessionId === 'dev-mode';
   const [exercises, setExercises] = useState<any[]>([]);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -42,7 +43,31 @@ export const ActiveWorkoutScreen: React.FC<ActiveWorkoutScreenProps> = ({
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    loadWorkoutSession();
+    if (isDevMode && localExercises) {
+      // Dev mode - use local exercises
+      const formattedExercises = localExercises.map((ex: any, index: number) => ({
+        id: `local-${index}`,
+        exercises: {
+          id: ex.exercise.id,
+          name: ex.exercise.name,
+          display_name: ex.exercise.displayName,
+        },
+        assigned_rep_scheme: ex.assignedRepScheme,
+        target_weights: ex.targetWeights,
+        exercise_sets: ex.sets.map((set: any, setIndex: number) => ({
+          id: `local-set-${index}-${setIndex}`,
+          set_number: set.setNumber,
+          target_reps: set.targetReps,
+          achieved_reps: null,
+          weight: null,
+          completed: false,
+        })),
+      }));
+      setExercises(formattedExercises);
+      setLoading(false);
+    } else {
+      loadWorkoutSession();
+    }
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
@@ -100,19 +125,24 @@ export const ActiveWorkoutScreen: React.FC<ActiveWorkoutScreenProps> = ({
     }
 
     try {
-      await supabase
-        .from('exercise_sets')
-        .update({
-          achieved_reps: parseInt(set.achieved_reps),
-          weight: parseFloat(set.weight),
-          completed: true,
-          completed_at: new Date().toISOString(),
-        })
-        .eq('id', setId);
+      if (!isDevMode) {
+        // Only call Supabase if not in dev mode
+        await supabase
+          .from('exercise_sets')
+          .update({
+            achieved_reps: parseInt(set.achieved_reps),
+            weight: parseFloat(set.weight),
+            completed: true,
+            completed_at: new Date().toISOString(),
+          })
+          .eq('id', setId);
+      }
 
       // Update local state
       const updatedExercises = [...exercises];
       updatedExercises[currentExerciseIndex].exercise_sets[setIndex].completed = true;
+      updatedExercises[currentExerciseIndex].exercise_sets[setIndex].achieved_reps = parseInt(set.achieved_reps);
+      updatedExercises[currentExerciseIndex].exercise_sets[setIndex].weight = parseFloat(set.weight);
       setExercises(updatedExercises);
 
       // Start rest timer
@@ -156,8 +186,14 @@ export const ActiveWorkoutScreen: React.FC<ActiveWorkoutScreenProps> = ({
           text: 'Finish',
           onPress: async () => {
             try {
-              await completeWorkoutSession(sessionId);
-              navigation.replace('WorkoutComplete', { sessionId });
+              if (!isDevMode) {
+                await completeWorkoutSession(sessionId);
+              }
+              // Navigate to completion screen (works in both modes)
+              navigation.replace('WorkoutComplete', {
+                sessionId,
+                localExercises: isDevMode ? exercises : undefined,
+              } as any);
             } catch (error) {
               console.error('Error completing workout:', error);
               Alert.alert('Error', 'Failed to complete workout');

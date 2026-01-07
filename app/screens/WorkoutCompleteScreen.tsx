@@ -38,13 +38,54 @@ export const WorkoutCompleteScreen: React.FC<WorkoutCompleteScreenProps> = ({
   navigation,
   route,
 }) => {
-  const { sessionId } = route.params;
+  const { sessionId, localExercises } = route.params as any;
+  const isDevMode = sessionId === 'dev-mode';
   const [summary, setSummary] = useState<WorkoutSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadWorkoutSummary();
+    if (isDevMode && localExercises) {
+      loadDevModeSummary();
+    } else {
+      loadWorkoutSummary();
+    }
   }, []);
+
+  const loadDevModeSummary = () => {
+    // Calculate summary from local exercises
+    let totalSets = 0;
+    let completedSets = 0;
+    let totalVolume = 0;
+    const muscleGroupSet = new Set<string>();
+
+    localExercises?.forEach((exercise: any) => {
+      // Get muscle group from exercise data
+      if (exercise.exercises?.muscle_group) {
+        muscleGroupSet.add(exercise.exercises.muscle_group);
+      }
+
+      exercise.exercise_sets?.forEach((set: any) => {
+        totalSets++;
+        if (set.completed) {
+          completedSets++;
+          totalVolume += (set.weight || 0) * (set.achieved_reps || 0);
+        }
+      });
+    });
+
+    setSummary({
+      duration: 0, // Can't track duration in dev mode without timestamps
+      totalSets,
+      completedSets,
+      totalVolume,
+      exerciseCount: localExercises?.length || 0,
+      muscleGroups: Array.from(muscleGroupSet).length > 0
+        ? Array.from(muscleGroupSet)
+        : ['Workout'],
+      personalRecords: 0, // No PR tracking in dev mode
+    });
+    setLoading(false);
+  };
 
   const loadWorkoutSummary = async () => {
     try {
