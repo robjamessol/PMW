@@ -126,7 +126,7 @@ export const DevModeContext = React.createContext<{
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [devMode, setDevMode] = useState(false);
+  const [devMode, setDevMode] = useState(true); // Auto-skip login for testing
 
   useEffect(() => {
     // Get initial session
