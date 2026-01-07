@@ -123,12 +123,18 @@ export const DevModeContext = React.createContext<{
   setDevMode: (value: boolean) => void;
 }>({ devMode: false, setDevMode: () => {} });
 
+// Set to true to skip login and Supabase auth entirely
+const DEV_MODE = true;
+
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [devMode, setDevMode] = useState(true); // Auto-skip login for testing
+  const [loading, setLoading] = useState(!DEV_MODE); // Skip loading in dev mode
+  const [devMode, setDevMode] = useState(DEV_MODE);
 
   useEffect(() => {
+    // Skip auth check in dev mode
+    if (DEV_MODE) return;
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
