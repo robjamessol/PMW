@@ -53,6 +53,22 @@ if (menuBtn && mobileMenu) {
   });
 }
 
+// ---------- USER DROPDOWN ----------
+const userMenuBtn = document.getElementById('userMenuBtn');
+const userDropdown = document.getElementById('userDropdown');
+
+if (userMenuBtn && userDropdown) {
+  userMenuBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    userDropdown.classList.toggle('active');
+  });
+  document.addEventListener('click', (e) => {
+    if (!userDropdown.contains(e.target) && !userMenuBtn.contains(e.target)) {
+      userDropdown.classList.remove('active');
+    }
+  });
+}
+
 // ---------- SCROLL REVEAL ----------
 const revealElements = () => {
   const selectors = [
