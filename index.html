@@ -43,20 +43,33 @@
   <!-- ==================== HERO ==================== -->
   <header class="hero">
     <div class="hero-media">
-      <img src="https://images.unsplash.com/photo-1555744164-728dd59f9d8b?w=1920&q=80" alt="Seven Mile Beach sunset, Grand Cayman" class="hero-img">
+      <!-- Rotating location images -->
+      <img src="https://images.unsplash.com/photo-1555744164-728dd59f9d8b?w=1920&q=80" alt="Seven Mile Beach sunset" class="hero-img hero-slide active" data-location="Seven Mile Beach">
+      <img src="https://images.unsplash.com/photo-1630116521535-c57e5487cb42?w=1920&q=80" alt="Palm trees on Grand Cayman beach" class="hero-img hero-slide" data-location="Rum Point">
+      <img src="https://images.unsplash.com/photo-1622561700644-babb49d52279?w=1920&q=80" alt="Boats on turquoise Cayman waters" class="hero-img hero-slide" data-location="North Sound">
+      <img src="https://images.unsplash.com/photo-1675829604010-509cca710300?w=1920&q=80" alt="Stingray in Grand Cayman" class="hero-img hero-slide" data-location="Stingray City">
+      <img src="https://images.unsplash.com/photo-1584132967334-10e028bd69f7?w=1920&q=80" alt="Luxury resort beachfront" class="hero-img hero-slide" data-location="West Bay">
       <div class="hero-overlay"></div>
     </div>
-    <div class="hero-content">
-      <p class="hero-eyebrow">Grand Cayman, Cayman Islands</p>
-      <h1 class="hero-title">Where Caribbean<br>Luxury Feels Like Home</h1>
-      <p class="hero-subtitle">Hand-picked boutique hotels, private charters, island activities, and unforgettable dining</p>
 
-      <!-- ===== SEARCH BAR (inside hero) ===== -->
+    <!-- Location stamp -->
+    <div class="hero-location-stamp" id="locationStamp">
+      <span class="stamp-dot"></span>
+      <span class="stamp-text">Seven Mile Beach</span>
+    </div>
+
+    <!-- Centered headline -->
+    <div class="hero-content">
+      <h1 class="hero-title">Your island, curated</h1>
+    </div>
+
+    <!-- Search bar at bottom edge -->
+    <div class="hero-search-wrap">
       <form class="hero-search-bar" id="searchForm">
-        <div class="search-field">
-          <label>Category</label>
+        <div class="search-field search-field-destination">
+          <label>Destination</label>
           <select id="searchCategory">
-            <option value="all">All Categories</option>
+            <option value="all">Where to?</option>
             <option value="hotels">Hotels</option>
             <option value="charters">Charters</option>
             <option value="activities">Activities</option>
@@ -65,13 +78,10 @@
         </div>
         <div class="search-divider"></div>
         <div class="search-field">
-          <label>Check In</label>
-          <input type="date" id="searchCheckin">
-        </div>
-        <div class="search-divider"></div>
-        <div class="search-field">
-          <label>Check Out</label>
-          <input type="date" id="searchCheckout">
+          <label>Stay Dates</label>
+          <input type="text" id="searchDates" placeholder="Select dates" readonly>
+          <input type="date" id="searchCheckin" class="sr-only">
+          <input type="date" id="searchCheckout" class="sr-only">
         </div>
         <div class="search-divider"></div>
         <div class="search-field">
@@ -83,12 +93,10 @@
             <option>4+ Guests</option>
           </select>
         </div>
-        <button type="submit" class="search-btn">Search</button>
+        <button type="submit" class="search-btn" aria-label="Search">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
       </form>
-    </div>
-    <div class="hero-scroll">
-      <span>Scroll</span>
-      <div class="hero-scroll-line"></div>
     </div>
   </header>
 
@@ -527,24 +535,49 @@
 
   <script src="script.js"></script>
   <script>
-    // Search form functionality
+    // ===== Hero Slideshow =====
+    (function() {
+      var slides = document.querySelectorAll('.hero-slide');
+      var stamp = document.getElementById('locationStamp');
+      var stampText = stamp ? stamp.querySelector('.stamp-text') : null;
+      var current = 0;
+      var total = slides.length;
+
+      function nextSlide() {
+        slides[current].classList.remove('active');
+        current = (current + 1) % total;
+        slides[current].classList.add('active');
+        if (stampText) {
+          stamp.style.opacity = '0';
+          setTimeout(function() {
+            stampText.textContent = slides[current].getAttribute('data-location');
+            stamp.style.opacity = '1';
+          }, 400);
+        }
+      }
+
+      if (total > 1) {
+        setInterval(nextSlide, 5000);
+      }
+
+      // Stamp fade transition
+      if (stamp) stamp.style.transition = 'opacity 0.4s ease';
+    })();
+
+    // ===== Search form =====
     document.getElementById('searchForm').addEventListener('submit', function(e) {
       e.preventDefault();
-      const category = document.getElementById('searchCategory').value;
-      const pages = {
+      var category = document.getElementById('searchCategory').value;
+      var pages = {
         hotels: 'hotels.html',
         charters: 'charters.html',
         activities: 'experiences.html',
         dining: 'dining.html',
         all: 'hotels.html'
       };
-      const checkin = document.getElementById('searchCheckin').value;
-      const checkout = document.getElementById('searchCheckout').value;
-      const guests = document.getElementById('searchGuests').value;
-      let url = pages[category] || 'hotels.html';
-      const params = new URLSearchParams();
-      if (checkin) params.set('checkin', checkin);
-      if (checkout) params.set('checkout', checkout);
+      var guests = document.getElementById('searchGuests').value;
+      var url = pages[category] || 'hotels.html';
+      var params = new URLSearchParams();
       if (guests) params.set('guests', guests);
       if (params.toString()) url += '?' + params.toString();
       window.location.href = url;
