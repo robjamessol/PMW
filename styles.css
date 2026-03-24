@@ -384,10 +384,10 @@ ul { list-style: none; }
   text-shadow: 0 2px 30px rgba(0,0,0,0.15);
 }
 
-/* Search bar — centered in lower portion of hero */
+/* Search bar — centered in hero below title */
 .hero-search-wrap {
   position: absolute;
-  bottom: 15%;
+  bottom: 25%;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
