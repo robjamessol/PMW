@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hotel Details — Stay Cayman</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    .detail-hero { position:relative; height:60vh; min-height:400px; overflow:hidden; }
+    .detail-hero img { width:100%; height:100%; object-fit:cover; }
+    .detail-hero-overlay { position:absolute; inset:0; background:linear-gradient(to top,rgba(0,0,0,.55) 0%,transparent 60%); }
+    .detail-hero-content { position:absolute; bottom:48px; left:0; right:0; padding:0 24px; }
+    .detail-hero-content .container { max-width:var(--container-max); margin:0 auto; }
+    .detail-breadcrumb { font-family:var(--font-sans); font-size:.85rem; color:rgba(255,255,255,.7); margin-bottom:12px; }
+    .detail-breadcrumb a { color:rgba(255,255,255,.85); text-decoration:underline; }
+    .detail-hero-title { font-family:var(--font-serif); font-size:clamp(2rem,4.5vw,3.2rem); font-weight:600; color:#fff; margin:0 0 8px; }
+    .detail-hero-sub { font-family:var(--font-sans); font-size:1rem; color:rgba(255,255,255,.8); font-weight:300; }
+
+    .detail-body { padding:60px 0 100px; background:var(--color-bg); }
+    .detail-grid { display:grid; grid-template-columns:1fr 380px; gap:48px; }
+    @media(max-width:900px){ .detail-grid { grid-template-columns:1fr; } }
+
+    .detail-section { margin-bottom:40px; }
+    .detail-section h2 { font-family:var(--font-serif); font-size:1.5rem; font-weight:600; color:var(--color-text); margin:0 0 16px; }
+    .detail-section p { font-family:var(--font-sans); font-size:.95rem; color:var(--color-text-secondary); line-height:1.7; }
+
+    .amenities-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px; }
+    .amenity-item { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--radius-sm); font-family:var(--font-sans); font-size:.88rem; color:var(--color-text); }
+    .amenity-item svg { width:18px; height:18px; stroke:var(--color-accent); flex-shrink:0; }
+
+    .gallery-row { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:16px; }
+    .gallery-row img { width:100%; height:160px; object-fit:cover; border-radius:var(--radius-sm); cursor:pointer; transition:transform .3s; }
+    .gallery-row img:hover { transform:scale(1.03); }
+
+    .booking-card { position:sticky; top:100px; background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--radius-lg); padding:32px; box-shadow:var(--shadow-md); }
+    .booking-price { font-family:var(--font-serif); font-size:2rem; font-weight:600; color:var(--color-text); }
+    .booking-price span { font-family:var(--font-sans); font-size:.9rem; font-weight:300; color:var(--color-text-secondary); }
+    .booking-rating { display:flex; align-items:center; gap:6px; margin:8px 0 24px; color:var(--color-gold); font-size:1rem; }
+    .booking-rating small { color:var(--color-text-secondary); font-size:.85rem; }
+    .booking-field { margin-bottom:16px; }
+    .booking-field label { display:block; font-family:var(--font-sans); font-size:.75rem; font-weight:600; text-transform:uppercase; letter-spacing:.08em; color:var(--color-text-secondary); margin-bottom:6px; }
+    .booking-field input, .booking-field select { width:100%; padding:12px 14px; font-family:var(--font-sans); font-size:.9rem; border:1px solid var(--color-border); border-radius:var(--radius-sm); background:var(--color-bg); color:var(--color-text); }
+    .booking-btn { display:block; width:100%; padding:16px; margin-top:20px; background:var(--color-accent); color:#fff; font-family:var(--font-sans); font-size:1rem; font-weight:500; border:none; border-radius:var(--radius-sm); cursor:pointer; text-align:center; transition:background .3s; }
+    .booking-btn:hover { background:var(--color-accent-light); }
+    .booking-note { font-family:var(--font-sans); font-size:.8rem; color:var(--color-text-light); text-align:center; margin-top:12px; }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-inner">
+      <button class="nav-menu-btn" id="menuBtn" aria-label="Menu"><span></span><span></span><span></span></button>
+      <a href="index.html" class="nav-logo">STAY CAYMAN</a>
+      <div class="nav-actions">
+        <a href="hotels.html" class="nav-link hide-mobile">Hotels</a>
+        <a href="charters.html" class="nav-link hide-mobile">Charters</a>
+        <a href="experiences.html" class="nav-link hide-mobile">Activities</a>
+        <a href="dining.html" class="nav-link hide-mobile">Dining</a>
+        <a href="contact.html" class="nav-link nav-cta">Book Now</a>
+      </div>
+    </div>
+  </nav>
+  <div class="mobile-menu" id="mobileMenu">
+    <div class="mobile-menu-inner">
+      <a href="hotels.html" class="mobile-menu-link">Hotels</a>
+      <a href="charters.html" class="mobile-menu-link">Charters</a>
+      <a href="experiences.html" class="mobile-menu-link">Activities</a>
+      <a href="dining.html" class="mobile-menu-link">Dining</a>
+      <a href="about.html" class="mobile-menu-link">About</a>
+      <a href="contact.html" class="mobile-menu-link">Contact</a>
+    </div>
+  </div>
+
+  <!-- HERO (populated by JS) -->
+  <header class="detail-hero" id="heroSection">
+    <img id="heroImg" src="" alt="">
+    <div class="detail-hero-overlay"></div>
+    <div class="detail-hero-content">
+      <div class="container">
+        <p class="detail-breadcrumb"><a href="index.html">Home</a> / <a href="hotels.html">Hotels</a> / <span id="breadcrumbName"></span></p>
+        <h1 class="detail-hero-title" id="heroTitle"></h1>
+        <p class="detail-hero-sub" id="heroSub"></p>
+      </div>
+    </div>
+  </header>
+
+  <!-- BODY -->
+  <section class="detail-body">
+    <div class="container">
+      <div class="detail-grid">
+
+        <!-- LEFT COLUMN -->
+        <div>
+          <div class="detail-section">
+            <h2>About This Property</h2>
+            <p id="detailDesc"></p>
+          </div>
+
+          <div class="detail-section">
+            <h2>Gallery</h2>
+            <div class="gallery-row" id="galleryRow"></div>
+          </div>
+
+          <div class="detail-section">
+            <h2>Amenities</h2>
+            <div class="amenities-grid" id="amenitiesGrid"></div>
+          </div>
+
+          <div class="detail-section">
+            <h2>Location</h2>
+            <p id="locationDesc"></p>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN — BOOKING -->
+        <div>
+          <div class="booking-card">
+            <div class="booking-price" id="bookingPrice"></div>
+            <div class="booking-rating" id="bookingRating"></div>
+            <div class="booking-field">
+              <label>Check In</label>
+              <input type="date" id="checkIn">
+            </div>
+            <div class="booking-field">
+              <label>Check Out</label>
+              <input type="date" id="checkOut">
+            </div>
+            <div class="booking-field">
+              <label>Guests</label>
+              <select id="guestCount">
+                <option>1 Guest</option>
+                <option>2 Guests</option>
+                <option selected>2 Guests</option>
+                <option>3 Guests</option>
+                <option>4 Guests</option>
+              </select>
+            </div>
+            <a href="contact.html" class="booking-btn">Reserve Now</a>
+            <p class="booking-note">You won't be charged yet</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col footer-brand">
+          <h3 class="footer-logo">STAY CAYMAN</h3>
+          <p class="footer-tagline">Boutique hotels &amp; curated experiences<br>on Grand Cayman Island.</p>
+        </div>
+        <div class="footer-col"><h4>Explore</h4><ul><li><a href="hotels.html">Hotels</a></li><li><a href="charters.html">Charters</a></li><li><a href="experiences.html">Activities</a></li><li><a href="dining.html">Dining</a></li></ul></div>
+        <div class="footer-col"><h4>Company</h4><ul><li><a href="about.html">About Us</a></li><li><a href="contact.html">Contact</a></li><li><a href="#">Partner With Us</a></li><li><a href="#">Press</a></li></ul></div>
+        <div class="footer-col"><h4>Support</h4><ul><li><a href="#">Help Center</a></li><li><a href="#">Cancellation Policy</a></li><li><a href="#">Privacy Policy</a></li><li><a href="#">Terms of Service</a></li></ul></div>
+      </div>
+      <div class="footer-bottom"><p>&copy; 2026 Stay Cayman. All rights reserved.</p></div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+  <script>
+    const hotels = [
+      {
+        id:1, name:"The Ritz-Carlton, Grand Cayman", neighborhood:"Seven Mile Beach", price:650, stars:5,
+        img:"https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=1600&q=80",
+        desc:"The Ritz-Carlton, Grand Cayman is the island's most iconic luxury resort, set on nine pristine acres along Seven Mile Beach. Guests enjoy 365 elegant rooms and suites, a 71,000-square-foot La Prairie spa, multiple swimming pools, and the award-winning Blue by Eric Ripert restaurant. The resort features direct beach access, a tennis centre, water sports, and a vibrant kids' program. Whether you're seeking a romantic getaway or a family vacation, the Ritz-Carlton delivers an unmatched level of Caribbean sophistication.",
+        gallery:["https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&q=80","https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=600&q=80","https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=600&q=80"],
+        amenities:["Beachfront Access","Full-Service Spa","Multiple Pools","Fine Dining","Fitness Center","Tennis Courts","Water Sports","Kids Club","Concierge","Room Service"],
+        location:"Located on the prestigious southern stretch of Seven Mile Beach, steps from world-class restaurants and shopping in George Town. The Owen Roberts International Airport is just a 15-minute drive away."
+      },
+      {
+        id:2, name:"Kimpton Seafire Resort", neighborhood:"Seven Mile Beach", price:480, stars:5,
+        img:"https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=1600&q=80",
+        desc:"Kimpton Seafire Resort & Spa is Grand Cayman's most stylish beachfront property, blending bold contemporary design with relaxed Caribbean warmth. The resort features 266 luxurious rooms, the award-winning Coccoloba Spa, farm-to-table dining at Ave, and creative cocktails at the poolside Tillie's. A stunning infinity pool, water sports, and easy beach access make this the ideal destination for design-conscious travellers.",
+        gallery:["https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=600&q=80","https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?w=600&q=80","https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=600&q=80"],
+        amenities:["Beachfront Access","Award-Winning Spa","Infinity Pool","Farm-to-Table Dining","Fitness Center","Yoga Studio","Water Sports","Pet Friendly","Concierge","Valet Parking"],
+        location:"Situated on the northern stretch of Seven Mile Beach, adjacent to the vibrant Camana Bay town centre with its shops, restaurants, and cinema. Airport is 20 minutes away."
+      },
+      {
+        id:3, name:"Palm Heights", neighborhood:"Seven Mile Beach", price:390, stars:4,
+        img:"https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=1600&q=80",
+        desc:"Palm Heights is Grand Cayman's creative cultural hub — a boutique hotel where art, music, and island life converge. Set in lush tropical gardens on Seven Mile Beach, the property features 52 uniquely designed rooms, a professional recording studio, the Tillage restaurant, and a members-only Coconut Club. The atmosphere is effortlessly cool, attracting a stylish crowd seeking authentic Caribbean culture with modern creative energy.",
+        gallery:["https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&q=80","https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=600&q=80","https://images.unsplash.com/photo-1540541338287-41700207dee6?w=600&q=80"],
+        amenities:["Beachfront Access","Recording Studio","Boutique Restaurant","Pool","Art Gallery","Wellness Center","Beach Bar","Bicycles","Concierge","Library"],
+        location:"Set on Seven Mile Beach in the heart of Grand Cayman's West Bay corridor. Walking distance to local restaurants and a short drive to George Town and Camana Bay."
+      },
+      {
+        id:4, name:"The Westin Grand Cayman", neighborhood:"Seven Mile Beach", price:320, stars:4,
+        img:"https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1600&q=80",
+        desc:"The Westin Grand Cayman Seven Mile Beach Resort & Spa offers families and couples a luxurious yet approachable beachfront experience. With 343 spacious guest rooms and suites, a Hibiscus Spa, two inviting pools, and the signature Ferdinands restaurant, the Westin combines the comfort of a trusted brand with genuine island warmth. The Kids Club and water activities make it especially popular with families.",
+        gallery:["https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=600&q=80","https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=600&q=80","https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?w=600&q=80"],
+        amenities:["Beachfront Access","Full-Service Spa","Two Pools","Multiple Restaurants","Kids Club","Fitness Center","Water Sports","Business Center","Concierge","Parking"],
+        location:"Prime central location on Seven Mile Beach, within walking distance to shops and restaurants. Just 10 minutes from Owen Roberts International Airport."
+      },
+      {
+        id:5, name:"Sunset House", neighborhood:"George Town", price:195, stars:4,
+        img:"https://images.unsplash.com/photo-1540541338287-41700207dee6?w=1600&q=80",
+        desc:"Sunset House is Grand Cayman's legendary dive resort, beloved by scuba enthusiasts from around the world. This intimate oceanfront property offers direct shore diving to the famous Sunset Reef, an on-site underwater photo centre, a lively oceanfront bar, and the iconic Cathy Church Photo Centre. While modest compared to luxury resorts, Sunset House delivers an authentic, community-driven dive experience that keeps guests returning year after year.",
+        gallery:["https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=600&q=80","https://images.unsplash.com/photo-1573052905904-34ad8c27f0cc?w=600&q=80","https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=600&q=80"],
+        amenities:["Shore Diving","Dive Shop","Underwater Photo Centre","Oceanfront Bar","Pool","Restaurant","Dive Training","Air Fills","Gear Rental","Free WiFi"],
+        location:"Located on the George Town ironshore coast, just south of the cruise ship terminal. Minutes from downtown George Town shops and restaurants. Airport is 10 minutes away."
+      },
+      {
+        id:6, name:"Caribbean Club", neighborhood:"Seven Mile Beach", price:550, stars:5,
+        img:"https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?w=1600&q=80",
+        desc:"Caribbean Club is an intimate, all-suite luxury boutique hotel offering just 37 expansive oceanfront residences on Seven Mile Beach. Each one-, two-, or three-bedroom suite features panoramic floor-to-ceiling ocean views, a full gourmet kitchen, and private balcony. The resort's personalized concierge service, stunning infinity pool, and home to the acclaimed Luca restaurant make it the preferred choice for discerning travellers seeking privacy and sophistication.",
+        gallery:["https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=600&q=80","https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=600&q=80","https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=600&q=80"],
+        amenities:["Beachfront Access","All-Suite Rooms","Infinity Pool","Luca Restaurant","Full Kitchen","Private Balconies","Concierge","Fitness Center","Beach Service","Parking"],
+        location:"Prime central location on Seven Mile Beach, adjacent to world-class restaurants and boutique shopping. A 15-minute drive from Owen Roberts International Airport."
+      },
+      {
+        id:7, name:"The Locale Grand Cayman", neighborhood:"Camana Bay", price:275, stars:4,
+        img:"https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=1600&q=80",
+        desc:"The Locale Grand Cayman is Camana Bay's modern boutique hotel, offering a fresh take on island hospitality. With 50 thoughtfully designed rooms featuring locally inspired artwork, a stunning rooftop pool with panoramic views, and a ground-floor social hub, The Locale is ideal for travellers who want to be in the heart of the action. Camana Bay's walkable town centre puts restaurants, galleries, and a weekly farmers market at your doorstep.",
+        gallery:["https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&q=80","https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?w=600&q=80","https://images.unsplash.com/photo-1573052905904-34ad8c27f0cc?w=600&q=80"],
+        amenities:["Rooftop Pool","Local Art","Restaurant","Walkable Location","Fitness Center","Bikes Available","Coworking Space","Free WiFi","Concierge","Parking"],
+        location:"In the heart of Camana Bay, Grand Cayman's premier walkable town centre. Seven Mile Beach is a 5-minute walk. Airport is 20 minutes away."
+      },
+      {
+        id:8, name:"Lighthouse Point", neighborhood:"East End", price:225, stars:4,
+        img:"https://images.unsplash.com/photo-1573052905904-34ad8c27f0cc?w=1600&q=80",
+        desc:"Lighthouse Point offers a tranquil retreat on Grand Cayman's unspoiled East End. This intimate property features spacious oceanfront suites with private balconies overlooking the reef. The pace is slow, the snorkeling is spectacular, and the stargazing is world-class. Perfect for guests who want to escape the crowds and experience the quiet, natural side of the island with stunning reef snorkeling right off the ironshore.",
+        gallery:["https://images.unsplash.com/photo-1540541338287-41700207dee6?w=600&q=80","https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=600&q=80","https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=600&q=80"],
+        amenities:["Oceanfront Rooms","Reef Snorkeling","Private Balconies","Pool","BBQ Area","Kayaks","Free WiFi","Stargazing","Kitchen Suites","Parking"],
+        location:"On the serene East End of Grand Cayman, about 45 minutes from the airport. Near the Queen Elizabeth II Botanic Park and blowholes. Ideal for nature lovers seeking seclusion."
+      }
+    ];
+
+    const checkSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
+
+    (function(){
+      const id = parseInt(new URLSearchParams(window.location.search).get('id')) || 1;
+      const h = hotels.find(x => x.id === id) || hotels[0];
+
+      document.title = h.name + ' — Stay Cayman';
+      document.getElementById('heroImg').src = h.img;
+      document.getElementById('heroImg').alt = h.name;
+      document.getElementById('heroTitle').textContent = h.name;
+      document.getElementById('heroSub').textContent = h.neighborhood + ' · Grand Cayman';
+      document.getElementById('breadcrumbName').textContent = h.name;
+      document.getElementById('detailDesc').textContent = h.desc;
+      document.getElementById('locationDesc').textContent = h.location;
+
+      document.getElementById('bookingPrice').innerHTML = '$' + h.price + ' <span>/ night</span>';
+      const stars = '&#9733;'.repeat(h.stars) + '&#9734;'.repeat(5 - h.stars);
+      document.getElementById('bookingRating').innerHTML = stars + ' <small>' + h.stars + '.0</small>';
+
+      const gallery = document.getElementById('galleryRow');
+      h.gallery.forEach(src => {
+        const img = document.createElement('img');
+        img.src = src; img.alt = h.name + ' gallery'; img.loading = 'lazy';
+        gallery.appendChild(img);
+      });
+
+      const grid = document.getElementById('amenitiesGrid');
+      h.amenities.forEach(a => {
+        const div = document.createElement('div');
+        div.className = 'amenity-item';
+        div.innerHTML = checkSvg + ' ' + a;
+        grid.appendChild(div);
+      });
+
+      // Set default dates
+      const today = new Date();
+      const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 7);
+      const nextWeek = new Date(today); nextWeek.setDate(today.getDate() + 10);
+      document.getElementById('checkIn').valueAsDate = tomorrow;
+      document.getElementById('checkOut').valueAsDate = nextWeek;
+    })();
+  </script>
+</body>
+</html>

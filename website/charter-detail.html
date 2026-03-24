@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Charter Details — Stay Cayman</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    .detail-hero { position:relative; height:60vh; min-height:400px; overflow:hidden; }
+    .detail-hero img { width:100%; height:100%; object-fit:cover; }
+    .detail-hero-overlay { position:absolute; inset:0; background:linear-gradient(to top,rgba(0,0,0,.55) 0%,transparent 60%); }
+    .detail-hero-content { position:absolute; bottom:48px; left:0; right:0; padding:0 24px; }
+    .detail-hero-content .container { max-width:var(--container-max); margin:0 auto; }
+    .detail-breadcrumb { font-family:var(--font-sans); font-size:.85rem; color:rgba(255,255,255,.7); margin-bottom:12px; }
+    .detail-breadcrumb a { color:rgba(255,255,255,.85); text-decoration:underline; }
+    .detail-hero-title { font-family:var(--font-serif); font-size:clamp(2rem,4.5vw,3.2rem); font-weight:600; color:#fff; margin:0 0 8px; }
+    .detail-hero-sub { font-family:var(--font-sans); font-size:1rem; color:rgba(255,255,255,.8); font-weight:300; display:flex; gap:20px; align-items:center; }
+
+    .detail-body { padding:60px 0 100px; background:var(--color-bg); }
+    .detail-grid { display:grid; grid-template-columns:1fr 380px; gap:48px; }
+    @media(max-width:900px){ .detail-grid { grid-template-columns:1fr; } }
+
+    .detail-section { margin-bottom:40px; }
+    .detail-section h2 { font-family:var(--font-serif); font-size:1.5rem; font-weight:600; color:var(--color-text); margin:0 0 16px; }
+    .detail-section p { font-family:var(--font-sans); font-size:.95rem; color:var(--color-text-secondary); line-height:1.7; }
+
+    .highlights-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; }
+    .highlight-item { display:flex; align-items:center; gap:10px; padding:14px 16px; background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--radius-sm); font-family:var(--font-sans); font-size:.88rem; color:var(--color-text); }
+    .highlight-item svg { width:18px; height:18px; stroke:var(--color-accent); flex-shrink:0; }
+
+    .gallery-row { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:16px; }
+    .gallery-row img { width:100%; height:160px; object-fit:cover; border-radius:var(--radius-sm); cursor:pointer; transition:transform .3s; }
+    .gallery-row img:hover { transform:scale(1.03); }
+
+    .info-list { list-style:none; padding:0; }
+    .info-list li { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--color-border-light); font-family:var(--font-sans); font-size:.9rem; color:var(--color-text); }
+    .info-list li:last-child { border-bottom:none; }
+    .info-list li strong { color:var(--color-text-secondary); min-width:100px; font-weight:500; font-size:.8rem; text-transform:uppercase; letter-spacing:.05em; }
+
+    .booking-card { position:sticky; top:100px; background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--radius-lg); padding:32px; box-shadow:var(--shadow-md); }
+    .booking-price { font-family:var(--font-serif); font-size:2rem; font-weight:600; color:var(--color-text); }
+    .booking-price span { font-family:var(--font-sans); font-size:.9rem; font-weight:300; color:var(--color-text-secondary); }
+    .booking-tag { display:inline-block; padding:4px 12px; background:var(--color-accent-subtle); color:var(--color-accent); font-family:var(--font-sans); font-size:.8rem; font-weight:500; border-radius:var(--radius-pill); margin:10px 0 20px; }
+    .booking-field { margin-bottom:16px; }
+    .booking-field label { display:block; font-family:var(--font-sans); font-size:.75rem; font-weight:600; text-transform:uppercase; letter-spacing:.08em; color:var(--color-text-secondary); margin-bottom:6px; }
+    .booking-field input, .booking-field select { width:100%; padding:12px 14px; font-family:var(--font-sans); font-size:.9rem; border:1px solid var(--color-border); border-radius:var(--radius-sm); background:var(--color-bg); color:var(--color-text); }
+    .booking-btn { display:block; width:100%; padding:16px; margin-top:20px; background:var(--color-accent); color:#fff; font-family:var(--font-sans); font-size:1rem; font-weight:500; border:none; border-radius:var(--radius-sm); cursor:pointer; text-align:center; transition:background .3s; }
+    .booking-btn:hover { background:var(--color-accent-light); }
+    .booking-note { font-family:var(--font-sans); font-size:.8rem; color:var(--color-text-light); text-align:center; margin-top:12px; }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-inner">
+      <button class="nav-menu-btn" id="menuBtn" aria-label="Menu"><span></span><span></span><span></span></button>
+      <a href="index.html" class="nav-logo">STAY CAYMAN</a>
+      <div class="nav-actions">
+        <a href="hotels.html" class="nav-link hide-mobile">Hotels</a>
+        <a href="charters.html" class="nav-link hide-mobile">Charters</a>
+        <a href="experiences.html" class="nav-link hide-mobile">Activities</a>
+        <a href="dining.html" class="nav-link hide-mobile">Dining</a>
+        <a href="contact.html" class="nav-link nav-cta">Book Now</a>
+      </div>
+    </div>
+  </nav>
+  <div class="mobile-menu" id="mobileMenu">
+    <div class="mobile-menu-inner">
+      <a href="hotels.html" class="mobile-menu-link">Hotels</a>
+      <a href="charters.html" class="mobile-menu-link">Charters</a>
+      <a href="experiences.html" class="mobile-menu-link">Activities</a>
+      <a href="dining.html" class="mobile-menu-link">Dining</a>
+      <a href="about.html" class="mobile-menu-link">About</a>
+      <a href="contact.html" class="mobile-menu-link">Contact</a>
+    </div>
+  </div>
+
+  <header class="detail-hero" id="heroSection">
+    <img id="heroImg" src="" alt="">
+    <div class="detail-hero-overlay"></div>
+    <div class="detail-hero-content">
+      <div class="container">
+        <p class="detail-breadcrumb"><a href="index.html">Home</a> / <a href="charters.html">Charters</a> / <span id="breadcrumbName"></span></p>
+        <h1 class="detail-hero-title" id="heroTitle"></h1>
+        <div class="detail-hero-sub" id="heroSub"></div>
+      </div>
+    </div>
+  </header>
+
+  <section class="detail-body">
+    <div class="container">
+      <div class="detail-grid">
+        <div>
+          <div class="detail-section">
+            <h2>About This Charter</h2>
+            <p id="detailDesc"></p>
+          </div>
+          <div class="detail-section">
+            <h2>Gallery</h2>
+            <div class="gallery-row" id="galleryRow"></div>
+          </div>
+          <div class="detail-section">
+            <h2>What's Included</h2>
+            <div class="highlights-grid" id="highlightsGrid"></div>
+          </div>
+          <div class="detail-section">
+            <h2>Trip Details</h2>
+            <ul class="info-list" id="infoList"></ul>
+          </div>
+        </div>
+        <div>
+          <div class="booking-card">
+            <div class="booking-price" id="bookingPrice"></div>
+            <div class="booking-tag" id="bookingTag"></div>
+            <div class="booking-field">
+              <label>Preferred Date</label>
+              <input type="date" id="tripDate">
+            </div>
+            <div class="booking-field">
+              <label>Number of Guests</label>
+              <select id="guestCount">
+                <option>1 Guest</option>
+                <option selected>2 Guests</option>
+                <option>3 Guests</option>
+                <option>4 Guests</option>
+                <option>5 Guests</option>
+                <option>6 Guests</option>
+              </select>
+            </div>
+            <a href="contact.html" class="booking-btn">Book This Charter</a>
+            <p class="booking-note">Free cancellation up to 48 hours before departure</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col footer-brand"><h3 class="footer-logo">STAY CAYMAN</h3><p class="footer-tagline">Boutique hotels &amp; curated experiences<br>on Grand Cayman Island.</p></div>
+        <div class="footer-col"><h4>Explore</h4><ul><li><a href="hotels.html">Hotels</a></li><li><a href="charters.html">Charters</a></li><li><a href="experiences.html">Activities</a></li><li><a href="dining.html">Dining</a></li></ul></div>
+        <div class="footer-col"><h4>Company</h4><ul><li><a href="about.html">About Us</a></li><li><a href="contact.html">Contact</a></li><li><a href="#">Partner With Us</a></li><li><a href="#">Press</a></li></ul></div>
+        <div class="footer-col"><h4>Support</h4><ul><li><a href="#">Help Center</a></li><li><a href="#">Cancellation Policy</a></li><li><a href="#">Privacy Policy</a></li><li><a href="#">Terms of Service</a></li></ul></div>
+      </div>
+      <div class="footer-bottom"><p>&copy; 2026 Stay Cayman. All rights reserved.</p></div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+  <script>
+    const charters = [
+      {
+        id:1, name:"Stingray City Catamaran", category:"Snorkel Trip", price:"$95", priceUnit:"/ person",
+        duration:"3 hours", guests:"Up to 30 guests", departure:"9:00 AM & 1:00 PM daily",
+        img:"https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=1600&q=80",
+        desc:"Cruise aboard a spacious catamaran to the world-famous Stingray City sandbar, where you'll wade into crystal-clear, waist-deep water to interact with friendly Southern Atlantic stingrays. Your experienced captain and crew provide snorkeling gear, refreshments, and expert guidance. After Stingray City, you'll stop at the pristine Barrier Reef for spectacular snorkeling among tropical fish, sea fans, and vibrant coral formations.",
+        gallery:["https://images.unsplash.com/photo-1682687220742-aba13b6e50ba?w=600&q=80","https://images.unsplash.com/photo-1500514966906-fe245eea9344?w=600&q=80","https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&q=80"],
+        includes:["Snorkel Equipment","Refreshments","Professional Guide","Reef Stop","Stingray Interaction","Towels","Sunscreen"],
+        details:{Departure:"George Town dock",Meeting:"30 min before departure","What to Bring":"Swimsuit, towel, sunscreen",Difficulty:"Easy — suitable for all ages"}
+      },
+      {
+        id:2, name:"Deep Sea Fishing Adventure", category:"Fishing", price:"$800", priceUnit:"/ boat",
+        duration:"6 hours", guests:"Up to 6 guests", departure:"6:00 AM daily",
+        img:"https://images.unsplash.com/photo-1504309092620-4d0ec726efa4?w=1600&q=80",
+        desc:"Head offshore aboard a fully equipped deep sea fishing vessel in pursuit of the Caribbean's most sought-after game fish. Target blue marlin, wahoo, mahi-mahi, yellowfin tuna, and more in the deep blue waters off Grand Cayman's coast. Your experienced captain knows the best spots and techniques, whether you're trolling, bottom fishing, or live-baiting. All tackle, bait, and fishing licences are included.",
+        gallery:["https://images.unsplash.com/photo-1606861880665-8d7bb0bab10e?w=600&q=80","https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=600&q=80","https://images.unsplash.com/photo-1534854638093-bada1813ca19?w=600&q=80"],
+        includes:["All Tackle & Bait","Fishing Licence","Experienced Captain","Mate","Drinks & Snacks","Fish Cleaning","Catch Photos"],
+        details:{Departure:"Morgan's Harbour Marina",Meeting:"30 min before departure","What to Bring":"Hat, sunscreen, light clothing",Difficulty:"All skill levels welcome"}
+      },
+      {
+        id:3, name:"Sunset Sail & Cocktails", category:"Sunset Cruise", price:"$120", priceUnit:"/ person",
+        duration:"2.5 hours", guests:"Up to 20 guests", departure:"5:00 PM daily",
+        img:"https://images.unsplash.com/photo-1500514966906-fe245eea9344?w=1600&q=80",
+        desc:"Set sail along Seven Mile Beach as the Caribbean sun paints the sky in shades of gold and crimson. This intimate sunset cruise features premium open bar cocktails, gourmet appetizers, and a curated playlist. Relax on the catamaran's spacious deck as your captain navigates the coast, pointing out landmarks and sharing island stories. A truly magical way to end any day in Grand Cayman.",
+        gallery:["https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&q=80","https://images.unsplash.com/photo-1534854638093-bada1813ca19?w=600&q=80","https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?w=600&q=80"],
+        includes:["Open Bar","Gourmet Appetizers","Live Music","Sunset Views","Professional Crew","Champagne Toast","Photos"],
+        details:{Departure:"Camana Bay Marina",Meeting:"30 min before departure","What to Bring":"Light layers, camera",Difficulty:"Easy — all ages welcome"}
+      },
+      {
+        id:4, name:"Luxury Yacht Half Day", category:"Luxury Yacht", price:"$2,500", priceUnit:"/ charter",
+        duration:"4 hours", guests:"Up to 12 guests", departure:"Flexible",
+        img:"https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?w=1600&q=80",
+        desc:"Experience Grand Cayman from the deck of a stunning private luxury yacht. This fully crewed half-day charter takes you to Stingray City, the barrier reef, and secluded coves along the island's coast. Enjoy a premium open bar, fresh sushi and seafood platters, paddleboards, and snorkel gear. Your dedicated captain and crew handle every detail so you can focus on creating unforgettable memories.",
+        gallery:["https://images.unsplash.com/photo-1500514966906-fe245eea9344?w=600&q=80","https://images.unsplash.com/photo-1534854638093-bada1813ca19?w=600&q=80","https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=600&q=80"],
+        includes:["Private Yacht","Full Crew","Premium Open Bar","Gourmet Lunch","Snorkel Gear","Paddleboards","Bluetooth Sound","Towels"],
+        details:{Departure:"Customised pickup",Meeting:"At your hotel dock or marina","What to Bring":"Swimsuit, sunscreen, camera",Difficulty:"Easy — all ages"}
+      },
+      {
+        id:5, name:"North Sound Snorkel Safari", category:"Snorkel Trip", price:"$110", priceUnit:"/ person",
+        duration:"3.5 hours", guests:"Up to 16 guests", departure:"8:30 AM & 12:30 PM",
+        img:"https://images.unsplash.com/photo-1682687220742-aba13b6e50ba?w=1600&q=80",
+        desc:"Explore three stunning snorkel sites in Grand Cayman's protected North Sound. Your naturalist guide leads you through pristine coral gardens, a starfish sanctuary, and the famous Barrier Reef. Encounter sea turtles, eagle rays, colourful parrotfish, and more in these calm, sheltered waters. The trip includes a refreshment stop at a sandbar where you can relax in the warm, shallow Caribbean water.",
+        gallery:["https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=600&q=80","https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&q=80","https://images.unsplash.com/photo-1500514966906-fe245eea9344?w=600&q=80"],
+        includes:["Snorkel Equipment","Naturalist Guide","3 Snorkel Stops","Refreshments","Sandbar Stop","Underwater Camera","Towels"],
+        details:{Departure:"Rum Point dock",Meeting:"15 min before departure","What to Bring":"Reef-safe sunscreen, swimsuit",Difficulty:"Easy to moderate"}
+      },
+      {
+        id:6, name:"Private Island Hopper", category:"Sailing", price:"$350", priceUnit:"/ person",
+        duration:"6 hours", guests:"Up to 10 guests", departure:"9:00 AM",
+        img:"https://images.unsplash.com/photo-1534854638093-bada1813ca19?w=1600&q=80",
+        desc:"Sail aboard a beautiful catamaran on a full-day island adventure. Visit secluded beaches, pristine snorkel sites, and hidden coves along Grand Cayman's coast. Your experienced crew serves a gourmet lunch, tropical cocktails, and fresh fruit aboard. Stop at Starfish Point, Rum Point, and the barrier reef. This is the ultimate way to explore the island's coastline in style and comfort.",
+        gallery:["https://images.unsplash.com/photo-1500514966906-fe245eea9344?w=600&q=80","https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?w=600&q=80","https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&q=80"],
+        includes:["Catamaran Sailing","Gourmet Lunch","Open Bar","Snorkel Gear","Multiple Stops","Professional Crew","Paddleboards","Music"],
+        details:{Departure:"Seven Mile Beach",Meeting:"15 min before departure","What to Bring":"Swimsuit, towel, sunscreen",Difficulty:"Easy — all ages"}
+      },
+      {
+        id:7, name:"Sport Fishing Tournament Prep", category:"Fishing", price:"$1,200", priceUnit:"/ boat",
+        duration:"8 hours", guests:"Up to 6 guests", departure:"5:30 AM",
+        img:"https://images.unsplash.com/photo-1606861880665-8d7bb0bab10e?w=1600&q=80",
+        desc:"For serious anglers, this full-day deep sea expedition targets the most prized game fish in Cayman waters. Fish alongside a tournament-experienced captain who knows exactly where the big ones are running. Whether you're chasing blue marlin, wahoo, or yellowfin tuna, this trip is designed for those who want to push their skills and reel in the catch of a lifetime. All professional-grade tackle provided.",
+        gallery:["https://images.unsplash.com/photo-1504309092620-4d0ec726efa4?w=600&q=80","https://images.unsplash.com/photo-1534854638093-bada1813ca19?w=600&q=80","https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=600&q=80"],
+        includes:["Pro-Grade Tackle","Experienced Captain","Mate","Drinks & Lunch","Fishing Licence","Fish Cleaning","Trophy Photos","Live Bait"],
+        details:{Departure:"Morgan's Harbour Marina",Meeting:"30 min before departure","What to Bring":"Hat, sunglasses, light layers",Difficulty:"Intermediate to advanced"}
+      },
+      {
+        id:8, name:"Bioluminescent Night Cruise", category:"Sunset Cruise", price:"$85", priceUnit:"/ person",
+        duration:"2 hours", guests:"Up to 18 guests", departure:"8:00 PM nightly",
+        img:"https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1600&q=80",
+        desc:"Witness one of nature's most magical phenomena on this nighttime cruise through Grand Cayman's bioluminescent waters. As your boat glides through the dark, the water erupts in ethereal blue-green light with every wave and splash. Your guide explains the science behind the glow while you trail your hands through the sparkling water. A truly unforgettable experience under the Caribbean stars.",
+        gallery:["https://images.unsplash.com/photo-1500514966906-fe245eea9344?w=600&q=80","https://images.unsplash.com/photo-1544551763-77ef2d0cfc6c?w=600&q=80","https://images.unsplash.com/photo-1534854638093-bada1813ca19?w=600&q=80"],
+        includes:["Expert Guide","Night Cruise","Refreshments","Bioluminescence Viewing","Stargazing","Safety Equipment","Photo Opportunities"],
+        details:{Departure:"George Town dock",Meeting:"15 min before departure","What to Bring":"Light jacket, camera (no flash)",Difficulty:"Easy — all ages"}
+      }
+    ];
+
+    const checkSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
+
+    (function(){
+      const id = parseInt(new URLSearchParams(window.location.search).get('id')) || 1;
+      const c = charters.find(x => x.id === id) || charters[0];
+
+      document.title = c.name + ' — Stay Cayman';
+      document.getElementById('heroImg').src = c.img;
+      document.getElementById('heroImg').alt = c.name;
+      document.getElementById('heroTitle').textContent = c.name;
+      document.getElementById('heroSub').innerHTML = '<span>' + c.duration + '</span><span>&middot;</span><span>' + c.guests + '</span>';
+      document.getElementById('breadcrumbName').textContent = c.name;
+      document.getElementById('detailDesc').textContent = c.desc;
+      document.getElementById('bookingPrice').innerHTML = c.price + ' <span>' + c.priceUnit + '</span>';
+      document.getElementById('bookingTag').textContent = c.category;
+
+      const gallery = document.getElementById('galleryRow');
+      c.gallery.forEach(src => { const img = document.createElement('img'); img.src = src; img.alt = c.name; img.loading = 'lazy'; gallery.appendChild(img); });
+
+      const grid = document.getElementById('highlightsGrid');
+      c.includes.forEach(item => { const div = document.createElement('div'); div.className = 'highlight-item'; div.innerHTML = checkSvg + ' ' + item; grid.appendChild(div); });
+
+      const list = document.getElementById('infoList');
+      c.details.Departure && Object.entries(c.details).forEach(([key, val]) => {
+        const li = document.createElement('li'); li.innerHTML = '<strong>' + key + '</strong> ' + val; list.appendChild(li);
+      });
+      const extras = [{k:'Duration',v:c.duration},{k:'Guests',v:c.guests},{k:'Departure Time',v:c.departure}];
+      extras.forEach(({k,v}) => { const li = document.createElement('li'); li.innerHTML = '<strong>' + k + '</strong> ' + v; list.appendChild(li); });
+
+      const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 3);
+      document.getElementById('tripDate').valueAsDate = tomorrow;
+    })();
+  </script>
+</body>
+</html>
