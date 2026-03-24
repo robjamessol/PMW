@@ -55,11 +55,12 @@
 
     /* ========== FILTER TABS ========== */
     .filter-section {
-      padding: 48px 0 16px;
+      padding: 16px 0 16px;
       background: var(--color-bg);
       position: sticky;
-      top: 72px;
+      top: 0;
       z-index: 50;
+      padding-top: 88px;
     }
     .filter-tabs {
       display: flex;
@@ -289,7 +290,7 @@
       .experiences-grid { grid-template-columns: 1fr; gap: 24px; }
       .footer-grid { grid-template-columns: 1fr 1fr; gap: 32px; }
       .footer-bottom { flex-direction: column; gap: 12px; text-align: center; }
-      .filter-section { top: 60px; }
+      .filter-section { top: 0; padding-top: 72px; }
     }
     @media (max-width: 480px) {
       .footer-grid { grid-template-columns: 1fr; }
