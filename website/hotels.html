@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <title>Our Hotels — Stay Cayman</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* ===== Page Header ===== */
+    .page-header {
+      padding: 160px 0 80px;
+      text-align: center;
+      background: var(--color-bg, #faf9f7);
+    }
+    .page-header-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.4rem, 5vw, 3.6rem);
+      font-weight: 600;
+      color: var(--color-text, #1a1a1a);
+      margin: 0 0 16px;
+    }
+    .page-header-subtitle {
+      font-family: 'Inter', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 300;
+      color: var(--color-text-secondary, #6b6560);
+      max-width: 540px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* ===== Filter Bar ===== */
+    .filter-section {
+      padding: 16px 0 32px;
+      background: var(--color-bg, #faf9f7);
+      position: sticky;
+      top: 0;
+      z-index: 90;
+      padding-top: 88px;
+    }
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      padding: 20px 28px;
+      background: var(--color-surface, #ffffff);
+      border: 1px solid var(--color-border, #e8e4df);
+      border-radius: 12px;
+    }
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .filter-group label {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--color-text-secondary, #6b6560);
+    }
+    .filter-group select {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      color: var(--color-text, #1a1a1a);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 2px 0;
+      -webkit-appearance: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%236b6560' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 2px center;
+      padding-right: 20px;
+    }
+    .filter-group select:focus {
+      outline: none;
+    }
+    .filter-divider {
+      width: 1px;
+      height: 36px;
+      background: var(--color-border, #e8e4df);
+    }
+    .filter-results {
+      margin-left: auto;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      color: var(--color-text-secondary, #6b6560);
+      white-space: nowrap;
+    }
+
+    /* ===== Hotels Grid (listing page) ===== */
+    .hotels-listing {
+      padding: 0 0 100px;
+      background: var(--color-bg, #faf9f7);
+    }
+    .hotels-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 32px;
+    }
+
+    /* ===== Hotel Card (listing page) ===== */
+    .listing-card {
+      display: block;
+      background: var(--color-surface, #ffffff);
+      border-radius: 12px;
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+      border: 1px solid var(--color-border, #e8e4df);
+      transition: transform 0.35s ease, box-shadow 0.35s ease, opacity 0.35s ease;
+      opacity: 1;
+    }
+    .listing-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 16px 48px rgba(0,0,0,0.08);
+    }
+    .listing-card.hidden {
+      display: none;
+    }
+    .listing-card-img-wrap {
+      position: relative;
+      overflow: hidden;
+      aspect-ratio: 4 / 3;
+    }
+    .listing-card-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.6s ease;
+    }
+    .listing-card:hover .listing-card-img {
+      transform: scale(1.04);
+    }
+    .listing-card-badge {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      background: var(--color-accent, #2c4a3e);
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 5px 12px;
+      border-radius: 4px;
+    }
+    .listing-card-body {
+      padding: 24px;
+    }
+    .listing-card-neighborhood {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--color-gold, #c4a265);
+      margin: 0 0 6px;
+    }
+    .listing-card-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.35rem;
+      font-weight: 600;
+      color: var(--color-text, #1a1a1a);
+      margin: 0 0 6px;
+      line-height: 1.3;
+    }
+    .listing-card-rating {
+      display: flex;
+      gap: 4px;
+      margin: 0 0 10px;
+    }
+    .listing-card-rating .star {
+      color: var(--color-gold, #c4a265);
+      font-size: 0.85rem;
+    }
+    .listing-card-desc {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.88rem;
+      color: var(--color-text-secondary, #6b6560);
+      line-height: 1.55;
+      margin: 0 0 16px;
+    }
+    .listing-card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .listing-card-price {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--color-text, #1a1a1a);
+    }
+    .listing-card-price span {
+      font-weight: 300;
+      font-size: 0.8rem;
+      color: var(--color-text-secondary, #6b6560);
+    }
+    .listing-card-link {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--color-accent, #2c4a3e);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: gap 0.25s ease;
+    }
+    .listing-card:hover .listing-card-link {
+      gap: 8px;
+    }
+
+    /* ===== No Results ===== */
+    .no-results {
+      text-align: center;
+      padding: 80px 20px;
+      display: none;
+    }
+    .no-results.visible {
+      display: block;
+    }
+    .no-results h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem;
+      color: var(--color-text, #1a1a1a);
+      margin: 0 0 8px;
+    }
+    .no-results p {
+      font-family: 'Inter', sans-serif;
+      color: var(--color-text-secondary, #6b6560);
+      font-size: 0.95rem;
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 768px) {
+      .page-header {
+        padding: 130px 0 50px;
+      }
+      .filter-bar {
+        padding: 16px 20px;
+        gap: 12px;
+      }
+      .filter-divider {
+        display: none;
+      }
+      .filter-group {
+        flex: 1 1 calc(50% - 8px);
+        min-width: 130px;
+      }
+      .filter-results {
+        width: 100%;
+        text-align: center;
+        margin-left: 0;
+        padding-top: 4px;
+        border-top: 1px solid var(--color-border, #e8e4df);
+      }
+      .hotels-grid {
+        grid-template-columns: 1fr;
+        gap: 24px;
+      }
+    }
+    @media (max-width: 480px) {
+      .page-header {
+        padding: 110px 0 40px;
+      }
+      .filter-group {
+        flex: 1 1 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== NAVIGATION ==================== -->
+  <nav class="navbar scrolled" id="navbar">
+    <div class="nav-inner">
+      <button class="nav-menu-btn" id="menuBtn" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+      <a href="index.html" class="nav-logo">STAY CAYMAN</a>
+      <div class="nav-actions">
+        <a href="#" class="nav-plus-cta hide-mobile">Want free upgrades? <strong>Get Plus</strong></a>
+        <div class="nav-user-wrap">
+          <button class="nav-user-btn" id="userMenuBtn" aria-label="User menu">
+            <svg class="nav-user-icon" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-3.3 0-10 1.7-10 5v2h20v-2c0-3.3-6.7-5-10-5z"/></svg>
+            <svg class="nav-hamburger-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <div class="user-dropdown" id="userDropdown">
+            <a href="#" class="user-dropdown-link">Register</a>
+            <a href="#" class="user-dropdown-link">Sign In</a>
+            <div class="user-dropdown-divider"></div>
+            <a href="hotels.html" class="user-dropdown-link">Hotels</a>
+            <a href="charters.html" class="user-dropdown-link">Charters</a>
+            <a href="experiences.html" class="user-dropdown-link">Activities</a>
+            <a href="dining.html" class="user-dropdown-link">Dining</a>
+            <div class="user-dropdown-divider"></div>
+            <a href="#" class="user-dropdown-link">My Lists</a>
+            <a href="#" class="user-dropdown-link">Customer Service</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ==================== MOBILE MENU ==================== -->
+  <div class="mobile-menu" id="mobileMenu">
+    <div class="mobile-menu-inner">
+      <a href="hotels.html" class="mobile-menu-link">Hotels</a>
+      <a href="charters.html" class="mobile-menu-link">Charters</a>
+      <a href="experiences.html" class="mobile-menu-link">Activities</a>
+      <a href="dining.html" class="mobile-menu-link">Dining</a>
+      <a href="about.html" class="mobile-menu-link">About</a>
+      <a href="contact.html" class="mobile-menu-link">Contact</a>
+      <div class="mobile-menu-divider"></div>
+      <a href="#" class="mobile-menu-link">Register</a>
+      <a href="#" class="mobile-menu-link">Sign In</a>
+    </div>
+  </div>
+
+  <!-- ==================== PAGE HEADER ==================== -->
+  <header class="page-header">
+    <div class="container">
+      <h1 class="page-header-title">Our Hotels</h1>
+      <p class="page-header-subtitle">Hand-picked boutique hotels and luxury resorts across Grand Cayman, from beachfront escapes to hidden island retreats.</p>
+    </div>
+  </header>
+
+  <!-- ==================== FILTER BAR ==================== -->
+  <section class="filter-section">
+    <div class="container">
+      <div class="filter-bar">
+        <div class="filter-group">
+          <label for="filterNeighborhood">Neighborhood</label>
+          <select id="filterNeighborhood">
+            <option value="all">All Neighborhoods</option>
+            <option value="Seven Mile Beach">Seven Mile Beach</option>
+            <option value="George Town">George Town</option>
+            <option value="Rum Point">Rum Point</option>
+            <option value="East End">East End</option>
+            <option value="Camana Bay">Camana Bay</option>
+          </select>
+        </div>
+        <div class="filter-divider"></div>
+        <div class="filter-group">
+          <label for="filterPrice">Price Range</label>
+          <select id="filterPrice">
+            <option value="all">All Prices</option>
+            <option value="0-300">Under $300</option>
+            <option value="300-500">$300 – $500</option>
+            <option value="500-9999">$500+</option>
+          </select>
+        </div>
+        <div class="filter-divider"></div>
+        <div class="filter-group">
+          <label for="filterSort">Sort By</label>
+          <select id="filterSort">
+            <option value="featured">Featured</option>
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
+          </select>
+        </div>
+        <span class="filter-results" id="filterResults">8 hotels</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== HOTEL GRID ==================== -->
+  <section class="hotels-listing">
+    <div class="container">
+      <div class="hotels-grid" id="hotelsGrid">
+
+        <!-- 1. The Ritz-Carlton Grand Cayman -->
+        <a href="hotel-detail.html?id=1" class="listing-card" data-neighborhood="Seven Mile Beach" data-price="650" data-featured="1">
+          <div class="listing-card-img-wrap">
+            <span class="card-badge-plus">Plus</span>
+            <span class="card-badge-discount">Save 20%</span>
+            <img src="https://images.unsplash.com/photo-1584132967334-10e028bd69f7?w=800&q=80" alt="The Ritz-Carlton Grand Cayman beachfront resort" class="listing-card-img">
+            <span class="listing-card-badge">Featured</span>
+          </div>
+          <div class="listing-card-body">
+            <p class="listing-card-neighborhood">Seven Mile Beach</p>
+            <h3 class="listing-card-name">The Ritz-Carlton, Grand Cayman</h3>
+            <div class="listing-card-rating">
+              <span class="star">&#9733;</span>
+              <span class="star">&#9733;</span>
+              <span class="star">&#9733;</span>
+              <span class="star">&#9733;</span>
+              <span class="star">&#9733;</span>
+            </div>
+            <p class="listing-card-desc">Iconic beachfront luxury with nine acres of gardens, a world-class spa, and direct beach access.</p>
+            <div class="listing-card-footer">
+              <p class="listing-card-price">$650 <span>/ night</span></p>
+              <span class="listing-card-link">View Details &rarr;</span>
+            </div>
+          </div>
+        </a>
+
+        <!-- 2. Kimpton Seafire Resort -->
+        <a href="hotel-detail.html?id=2" class="listing-card" data-neighborhood="Seven Mile Beach" data-price="480" data-featured="2">
+          <div class="listing-card-img-wrap">
+            <span class="card-badge-plus">Plus</span>
+            <span class="card-badge-discount">Save 20%</span>
+            <img src="https://images.unsplash.com/photo-1580541631950-7282082b53ce?w=800&q=80" alt="Kimpton Seafire Resort pool and ocean view" class="listing-card-img">
+          </div>
+          <div class="listing-card-body">
+            <p class="listing-card-neighborhood">Seven Mile Beach</p>
+            <h3 class="listing-card-name">Kimpton Seafire Resort</h3>
+            <div class="listing-card-rating">
+              <span class="star">&#9733;</span>
+              <span class="star">&#9733;</span>
+              <span class="star">&#9733;</span>
+              <span class="star">&#9733;</span>
+              <span class="star">&#9733;</span>
+            </div>
+            <p class="listing-card-desc">A vibrant beachfront resort with bold design, farm-to-table dining, and an award-winning spa.</p>
+            <div class="listing-card-footer">
+              <p class="listing-card-price">$480 <span>/ night</span></p>
+              <span class="listing-card-link">View Details &rarr;</span>
+            </div>
+          </div>
+        </a>
+
+        <!-- 3. Palm Heights -->
+        <a href="hotel-detail.html?id=3" class="listing-card" data-neighborhood="Seven Mile Beach" data-price="390" data-featured="3">
+          <div class="listing-card-img-wrap">
+            <img src="https://images.unsplash.com/photo-1570213489059-0aac6626cade?w=800&q=80" alt="Palm Heights tropical resort" class="listing-card-img">
+          </div>
+          <div class="listing-card-body">
+            <p class="listing-card-neighborhood">Seven Mile Beach</p>
+            <h3 class="listing-card-name">Palm Heights</h3>
+            <div class="listing-card-rating">
+              <span class="star">&#9733;</span>
+              <span class="star">&#9733;</span>
+              <span class="star">&#9733;</span>
+              <span class="star">&#9733;</span>
+              <span class="star">&#9734;</span>
+            </div>
+            <p class="listing-card-desc">A creative cultural hub with lush gardens, recording studio, and effortlessly cool Caribbean style.</p>
+            <div class="listing-card-footer">
+              <p class="listing-card-price">$390 <span>/ night</span></p>
+              <span class="listing-card-link">View Details &rarr;</span>
+            </div>
+          </div>
+        </a>
+
+        <!-- 4. The Westin Grand Cayman -->
+        <a href="hotel-detail.html?id=4" class="listing-card" data-neighborhood="Seven Mile Beach" data-price="320" data-featured="4">
+          <div class="listing-card-img-wrap">
+            <span class="card-badge-plus">Plus</span>
+            <span class="card-badge-discount">Save 15%</span>
+            <img src="https://images.unsplash.com/photo-1602002418816-5c0aeef426aa?w=800&q=80" alt="The Westin Grand Cayman luxury villa" class="listing-card-img">
+          </div>
+          <div class="listing-card-body">
+            <p class="listing-card-neighborhood">Seven Mile Beach</p>
+            <h3 class="listing-card-name">The Westin Grand Cayman</h3>
+            <div class="listing-card-rating">
+              <span class="star">&#9733;</span>
+              <span class="star">&#9733;</span>
+              <span class="star">&#9733;</span>
+              <span class="star">&#9733;</span>
+              <span class="star">&#9734;</span>
+            </div>
+            <p class="listing-card-desc">Family-friendly resort with spacious suites, multiple pools, and a prime beachfront location.</p>
+            <div class="listing-card-footer">
+              <p class="listing-card-price">$320 <span>/ night</span></p>
+              <span class="listing-card-link">View Details &rarr;</span>
+            </div>
+          </div>
+        </a>
+
+        <!-- 5. Sunset House -->
+        <a href="hotel-detail.html?id=5" class="listing-card" data-neighborhood="George Town" data-price="195" data-featured="5">
+          <div class="listing-card-img-wrap">
+            <img src="https://images.unsplash.com/photo-1622561813774-01721ec19b53?w=800&q=80" alt="Sunset House oceanfront dive resort" class="listing-card-img">
+          </div>
+          <div class="listing-card-body">
+            <p class="listing-card-neighborhood">George Town</p>
+            <h3 class="listing-card-name">Sunset House</h3>
+            <div class="listing-card-rating">
+              <span class="star">&#9733;</span>
+              <span class="star">&#9733;</span>
+              <span class="star">&#9733;</span>
+              <span class="star">&#9733;</span>
+              <span class="star">&#9734;</span>
+            </div>
+            <p class="listing-card-desc">A beloved diver's hotel with shore diving, an underwater photo center, and oceanfront bar.</p>
+            <div class="listing-card-footer">
+              <p class="listing-card-price">$195 <span>/ night</span></p>
+              <span class="listing-card-link">View Details &rarr;</span>
+            </div>
+          </div>
+        </a>
+
+        <!-- 6. Caribbean Club -->
+        <a href="hotel-detail.html?id=6" class="listing-card" data-neighborhood="Seven Mile Beach" data-price="550" data-featured="6">
+          <div class="listing-card-img-wrap">
+            <img src="https://images.unsplash.com/photo-1439130490301-25e322d88054?w=800&q=80" alt="Caribbean Club elegant suite interior" class="listing-card-img">
+          </div>
+          <div class="listing-card-body">
+            <p class="listing-card-neighborhood">Seven Mile Beach</p>
+            <h3 class="listing-card-name">Caribbean Club</h3>
+            <div class="listing-card-rating">
+              <span class="star">&#9733;</span>
+              <span class="star">&#9733;</span>
+              <span class="star">&#9733;</span>
+              <span class="star">&#9733;</span>
+              <span class="star">&#9733;</span>
+            </div>
+            <p class="listing-card-desc">Intimate all-suite boutique hotel with panoramic ocean views and personalized concierge service.</p>
+            <div class="listing-card-footer">
+              <p class="listing-card-price">$550 <span>/ night</span></p>
+              <span class="listing-card-link">View Details &rarr;</span>
+            </div>
+          </div>
+        </a>
+
+        <!-- 7. The Locale Grand Cayman -->
+        <a href="hotel-detail.html?id=7" class="listing-card" data-neighborhood="Camana Bay" data-price="275" data-featured="7">
+          <div class="listing-card-img-wrap">
+            <img src="https://images.unsplash.com/photo-1590523277543-a94d2e4eb00b?w=800&q=80" alt="The Locale Grand Cayman infinity pool" class="listing-card-img">
+          </div>
+          <div class="listing-card-body">
+            <p class="listing-card-neighborhood">Camana Bay</p>
+            <h3 class="listing-card-name">The Locale Grand Cayman</h3>
+            <div class="listing-card-rating">
+              <span class="star">&#9733;</span>
+              <span class="star">&#9733;</span>
+              <span class="star">&#9733;</span>
+              <span class="star">&#9733;</span>
+              <span class="star">&#9734;</span>
+            </div>
+            <p class="listing-card-desc">Modern boutique hotel in walkable Camana Bay with rooftop pool and locally inspired design.</p>
+            <div class="listing-card-footer">
+              <p class="listing-card-price">$275 <span>/ night</span></p>
+              <span class="listing-card-link">View Details &rarr;</span>
+            </div>
+          </div>
+        </a>
+
+        <!-- 8. Lighthouse Point -->
+        <a href="hotel-detail.html?id=8" class="listing-card" data-neighborhood="East End" data-price="225" data-featured="8">
+          <div class="listing-card-img-wrap">
+            <img src="https://images.unsplash.com/photo-1630116521535-c57e5487cb42?w=800&q=80" alt="Lighthouse Point secluded coastal retreat" class="listing-card-img">
+          </div>
+          <div class="listing-card-body">
+            <p class="listing-card-neighborhood">East End</p>
+            <h3 class="listing-card-name">Lighthouse Point</h3>
+            <div class="listing-card-rating">
+              <span class="star">&#9733;</span>
+              <span class="star">&#9733;</span>
+              <span class="star">&#9733;</span>
+              <span class="star">&#9733;</span>
+              <span class="star">&#9734;</span>
+            </div>
+            <p class="listing-card-desc">A secluded coastal retreat on the island's quiet east side with stunning reef snorkeling.</p>
+            <div class="listing-card-footer">
+              <p class="listing-card-price">$225 <span>/ night</span></p>
+              <span class="listing-card-link">View Details &rarr;</span>
+            </div>
+          </div>
+        </a>
+
+      </div>
+
+      <!-- No Results Message -->
+      <div class="no-results" id="noResults">
+        <h3>No hotels found</h3>
+        <p>Try adjusting your filters to see more results.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== FOOTER ==================== -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col footer-brand">
+          <h3 class="footer-logo">STAY CAYMAN</h3>
+          <p class="footer-tagline">Boutique hotels &amp; curated experiences<br>on Grand Cayman Island.</p>
+        </div>
+        <div class="footer-col">
+          <h4>Explore</h4>
+          <ul>
+            <li><a href="hotels.html">Hotels</a></li>
+            <li><a href="charters.html">Charters</a></li>
+            <li><a href="experiences.html">Activities</a></li>
+            <li><a href="dining.html">Dining</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Company</h4>
+          <ul>
+            <li><a href="about.html">About Us</a></li>
+            <li><a href="contact.html">Contact</a></li>
+            <li><a href="#">Partner With Us</a></li>
+            <li><a href="#">Press</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Support</h4>
+          <ul>
+            <li><a href="#">Help Center</a></li>
+            <li><a href="#">Cancellation Policy</a></li>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms of Service</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 Stay Cayman. All rights reserved.</p>
+        <div class="footer-social">
+          <a href="#" aria-label="Instagram">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.5"/></svg>
+          </a>
+          <a href="#" aria-label="Facebook">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+          </a>
+          <a href="#" aria-label="Twitter">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+
+  <!-- ==================== FILTER LOGIC ==================== -->
+  <script>
+  (function() {
+    const grid = document.getElementById('hotelsGrid');
+    const cards = Array.from(grid.querySelectorAll('.listing-card'));
+    const neighborhoodFilter = document.getElementById('filterNeighborhood');
+    const priceFilter = document.getElementById('filterPrice');
+    const sortFilter = document.getElementById('filterSort');
+    const resultsLabel = document.getElementById('filterResults');
+    const noResults = document.getElementById('noResults');
+
+    function applyFilters() {
+      const neighborhood = neighborhoodFilter.value;
+      const priceRange = priceFilter.value;
+      const sortBy = sortFilter.value;
+
+      // Parse price range
+      let priceMin = 0;
+      let priceMax = Infinity;
+      if (priceRange !== 'all') {
+        const parts = priceRange.split('-');
+        priceMin = parseInt(parts[0], 10);
+        priceMax = parseInt(parts[1], 10);
+      }
+
+      // Filter
+      let visibleCards = [];
+      cards.forEach(function(card) {
+        const cardNeighborhood = card.getAttribute('data-neighborhood');
+        const cardPrice = parseInt(card.getAttribute('data-price'), 10);
+
+        const matchNeighborhood = (neighborhood === 'all' || cardNeighborhood === neighborhood);
+        const matchPrice = (cardPrice >= priceMin && cardPrice <= priceMax);
+
+        if (matchNeighborhood && matchPrice) {
+          card.classList.remove('hidden');
+          visibleCards.push(card);
+        } else {
+          card.classList.add('hidden');
+        }
+      });
+
+      // Sort
+      visibleCards.sort(function(a, b) {
+        if (sortBy === 'price-asc') {
+          return parseInt(a.getAttribute('data-price')) - parseInt(b.getAttribute('data-price'));
+        } else if (sortBy === 'price-desc') {
+          return parseInt(b.getAttribute('data-price')) - parseInt(a.getAttribute('data-price'));
+        } else {
+          // Featured: use original data-featured order
+          return parseInt(a.getAttribute('data-featured')) - parseInt(b.getAttribute('data-featured'));
+        }
+      });
+
+      // Re-order DOM
+      visibleCards.forEach(function(card) {
+        grid.appendChild(card);
+      });
+
+      // Update count
+      const count = visibleCards.length;
+      resultsLabel.textContent = count + (count === 1 ? ' hotel' : ' hotels');
+
+      // Show/hide no results
+      if (count === 0) {
+        noResults.classList.add('visible');
+      } else {
+        noResults.classList.remove('visible');
+      }
+    }
+
+    neighborhoodFilter.addEventListener('change', applyFilters);
+    priceFilter.addEventListener('change', applyFilters);
+    sortFilter.addEventListener('change', applyFilters);
+  })();
+  </script>
+
+</body>
+</html>

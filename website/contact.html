@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <title>Contact — Stay Cayman</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* ========== CONTACT PAGE STYLES ========== */
+
+    /* --- Page Title Section --- */
+    .page-title-section {
+      padding: 10rem 0 4rem;
+      text-align: center;
+      background: var(--color-bg);
+    }
+    .page-title-section h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(2.4rem, 5vw, 3.6rem);
+      font-weight: 600;
+      color: var(--color-text);
+      letter-spacing: 0.01em;
+    }
+    .page-title-section p {
+      margin-top: 1rem;
+      font-size: 1.1rem;
+      color: var(--color-text-secondary);
+      max-width: 520px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* --- Contact Layout --- */
+    .contact-section {
+      padding: 0 0 6rem;
+    }
+    .contact-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: start;
+    }
+
+    /* --- Contact Form --- */
+    .contact-form-wrap {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      padding: 2.5rem;
+    }
+    .contact-form-wrap h2 {
+      font-family: var(--font-serif);
+      font-size: 1.6rem;
+      font-weight: 600;
+      margin-bottom: 2rem;
+    }
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+    .form-group label {
+      display: block;
+      font-size: .88rem;
+      font-weight: 500;
+      letter-spacing: .03em;
+      text-transform: uppercase;
+      color: var(--color-text-secondary);
+      margin-bottom: .5rem;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: .85rem 1rem;
+      font-family: var(--font-sans);
+      font-size: .95rem;
+      color: var(--color-text);
+      background: var(--color-bg);
+      border: 1px solid var(--color-border);
+      border-radius: 4px;
+      transition: border-color .3s ease, box-shadow .3s ease;
+      outline: none;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      border-color: var(--color-accent);
+      box-shadow: 0 0 0 3px rgba(44, 74, 62, .1);
+    }
+    .form-group textarea {
+      min-height: 140px;
+      resize: vertical;
+    }
+    .form-group select {
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b6560' d='M6 8.825L.35 3.175l.7-.7L6 7.425l4.95-4.95.7.7z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 1rem center;
+      padding-right: 2.5rem;
+    }
+    .form-group .error-msg {
+      display: none;
+      font-size: .82rem;
+      color: #c0392b;
+      margin-top: .4rem;
+    }
+    .form-group.has-error input,
+    .form-group.has-error select,
+    .form-group.has-error textarea {
+      border-color: #c0392b;
+    }
+    .form-group.has-error .error-msg {
+      display: block;
+    }
+    .form-submit-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .95rem 2.5rem;
+      font-family: var(--font-sans);
+      font-size: .92rem;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: #fff;
+      background: var(--color-accent);
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background .3s ease, transform .2s ease;
+    }
+    .form-submit-btn:hover {
+      background: var(--color-accent-light);
+      transform: translateY(-1px);
+    }
+    .form-success {
+      display: none;
+      padding: 1.25rem 1.5rem;
+      background: rgba(44, 74, 62, .08);
+      border: 1px solid rgba(44, 74, 62, .2);
+      border-radius: 4px;
+      color: var(--color-accent);
+      font-size: .95rem;
+      font-weight: 500;
+      margin-top: 1.5rem;
+      align-items: center;
+      gap: .75rem;
+    }
+    .form-success.visible {
+      display: flex;
+    }
+
+    /* --- Contact Info Cards --- */
+    .contact-info-wrap h2 {
+      font-family: var(--font-serif);
+      font-size: 1.6rem;
+      font-weight: 600;
+      margin-bottom: 2rem;
+    }
+    .info-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .info-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 1.25rem;
+      padding: 1.5rem;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      transition: box-shadow .3s ease, transform .3s ease;
+    }
+    .info-card:hover {
+      box-shadow: 0 6px 24px rgba(0,0,0,.05);
+      transform: translateY(-2px);
+    }
+    .info-card-icon {
+      width: 48px;
+      height: 48px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: rgba(44, 74, 62, .08);
+      color: var(--color-accent);
+    }
+    .info-card-text h3 {
+      font-family: var(--font-serif);
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: .25rem;
+    }
+    .info-card-text p {
+      font-size: .95rem;
+      color: var(--color-text-secondary);
+      line-height: 1.6;
+    }
+
+    /* --- FAQ Section --- */
+    .faq-section {
+      padding: 5rem 0 6rem;
+      background: var(--color-surface);
+    }
+    .faq-header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+    .faq-header h2 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.8rem, 3vw, 2.4rem);
+      font-weight: 600;
+    }
+    .faq-header p {
+      margin-top: .75rem;
+      color: var(--color-text-secondary);
+      font-size: 1.05rem;
+    }
+    .faq-list {
+      max-width: 780px;
+      margin: 0 auto;
+    }
+    .faq-item {
+      border-bottom: 1px solid var(--color-border);
+    }
+    .faq-item:first-child {
+      border-top: 1px solid var(--color-border);
+    }
+    .faq-question {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      padding: 1.4rem 0;
+      font-family: var(--font-sans);
+      font-size: 1.05rem;
+      font-weight: 500;
+      color: var(--color-text);
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-align: left;
+      transition: color .3s ease;
+    }
+    .faq-question:hover {
+      color: var(--color-accent);
+    }
+    .faq-question .faq-icon {
+      flex-shrink: 0;
+      width: 24px;
+      height: 24px;
+      margin-left: 1rem;
+      position: relative;
+      transition: transform .3s ease;
+    }
+    .faq-question .faq-icon::before,
+    .faq-question .faq-icon::after {
+      content: '';
+      position: absolute;
+      background: currentColor;
+      border-radius: 1px;
+      transition: transform .3s ease;
+    }
+    .faq-question .faq-icon::before {
+      width: 14px;
+      height: 2px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    .faq-question .faq-icon::after {
+      width: 2px;
+      height: 14px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    .faq-item.active .faq-question .faq-icon::after {
+      transform: translate(-50%, -50%) rotate(90deg);
+      opacity: 0;
+    }
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height .4s cubic-bezier(0.25, 0.46, 0.45, 0.94), padding .4s ease;
+    }
+    .faq-answer-inner {
+      padding: 0 0 1.4rem;
+      font-size: .97rem;
+      line-height: 1.75;
+      color: var(--color-text-secondary);
+    }
+
+    /* --- Responsive --- */
+    @media (max-width: 900px) {
+      .contact-grid {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+      }
+    }
+    @media (max-width: 600px) {
+      .page-title-section {
+        padding: 8rem 0 3rem;
+      }
+      .contact-form-wrap {
+        padding: 1.75rem;
+      }
+      .form-submit-btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== NAVIGATION ==================== -->
+  <nav class="navbar scrolled" id="navbar">
+    <div class="nav-inner">
+      <button class="nav-menu-btn" id="menuBtn" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+      <a href="index.html" class="nav-logo">STAY CAYMAN</a>
+      <div class="nav-actions">
+        <a href="#" class="nav-plus-cta hide-mobile">Want free upgrades? <strong>Get Plus</strong></a>
+        <div class="nav-user-wrap">
+          <button class="nav-user-btn" id="userMenuBtn" aria-label="User menu">
+            <svg class="nav-user-icon" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-3.3 0-10 1.7-10 5v2h20v-2c0-3.3-6.7-5-10-5z"/></svg>
+            <svg class="nav-hamburger-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <div class="user-dropdown" id="userDropdown">
+            <a href="#" class="user-dropdown-link">Register</a>
+            <a href="#" class="user-dropdown-link">Sign In</a>
+            <div class="user-dropdown-divider"></div>
+            <a href="hotels.html" class="user-dropdown-link">Hotels</a>
+            <a href="charters.html" class="user-dropdown-link">Charters</a>
+            <a href="experiences.html" class="user-dropdown-link">Activities</a>
+            <a href="dining.html" class="user-dropdown-link">Dining</a>
+            <div class="user-dropdown-divider"></div>
+            <a href="#" class="user-dropdown-link">My Lists</a>
+            <a href="#" class="user-dropdown-link">Customer Service</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ==================== MOBILE MENU ==================== -->
+  <div class="mobile-menu" id="mobileMenu">
+    <div class="mobile-menu-inner">
+      <a href="hotels.html" class="mobile-menu-link">Hotels</a>
+      <a href="charters.html" class="mobile-menu-link">Charters</a>
+      <a href="experiences.html" class="mobile-menu-link">Activities</a>
+      <a href="dining.html" class="mobile-menu-link">Dining</a>
+      <a href="about.html" class="mobile-menu-link">About</a>
+      <a href="contact.html" class="mobile-menu-link">Contact</a>
+      <div class="mobile-menu-divider"></div>
+      <a href="#" class="mobile-menu-link">Register</a>
+      <a href="#" class="mobile-menu-link">Sign In</a>
+    </div>
+  </div>
+
+  <!-- ==================== PAGE TITLE ==================== -->
+  <section class="page-title-section">
+    <div class="container">
+      <h1>Get In Touch</h1>
+      <p>Have a question or ready to plan your Grand Cayman getaway? We'd love to hear from you.</p>
+    </div>
+  </section>
+
+  <!-- ==================== CONTACT FORM + INFO ==================== -->
+  <section class="contact-section">
+    <div class="container">
+      <div class="contact-grid">
+
+        <!-- Left: Contact Form -->
+        <div class="contact-form-wrap">
+          <h2>Send Us a Message</h2>
+          <form id="contactForm" novalidate>
+            <div class="form-group" id="nameGroup">
+              <label for="contactName">Name</label>
+              <input type="text" id="contactName" name="name" placeholder="Your full name" required>
+              <span class="error-msg">Please enter your name.</span>
+            </div>
+
+            <div class="form-group" id="emailGroup">
+              <label for="contactEmail">Email</label>
+              <input type="email" id="contactEmail" name="email" placeholder="you@example.com" required>
+              <span class="error-msg">Please enter a valid email address.</span>
+            </div>
+
+            <div class="form-group" id="subjectGroup">
+              <label for="contactSubject">Subject</label>
+              <select id="contactSubject" name="subject" required>
+                <option value="" disabled selected>Select a subject</option>
+                <option value="general">General Inquiry</option>
+                <option value="hotel">Hotel Booking</option>
+                <option value="experience">Experience Booking</option>
+                <option value="partnership">Partnership</option>
+                <option value="other">Other</option>
+              </select>
+              <span class="error-msg">Please select a subject.</span>
+            </div>
+
+            <div class="form-group" id="messageGroup">
+              <label for="contactMessage">Message</label>
+              <textarea id="contactMessage" name="message" placeholder="Tell us how we can help..." required></textarea>
+              <span class="error-msg">Please enter your message.</span>
+            </div>
+
+            <button type="submit" class="form-submit-btn">
+              Send Message
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+
+            <div class="form-success" id="formSuccess">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              <span>Thank you! We'll get back to you within 24 hours.</span>
+            </div>
+          </form>
+        </div>
+
+        <!-- Right: Contact Info Cards -->
+        <div class="contact-info-wrap">
+          <h2>Contact Information</h2>
+          <div class="info-cards">
+
+            <div class="info-card">
+              <div class="info-card-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              </div>
+              <div class="info-card-text">
+                <h3>Email</h3>
+                <p>hello@staycayman.com</p>
+              </div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-card-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              </div>
+              <div class="info-card-text">
+                <h3>Phone</h3>
+                <p>+1 345-555-0123</p>
+              </div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-card-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              </div>
+              <div class="info-card-text">
+                <h3>Address</h3>
+                <p>George Town, Grand Cayman<br>Cayman Islands</p>
+              </div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-card-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </div>
+              <div class="info-card-text">
+                <h3>Office Hours</h3>
+                <p>Monday &ndash; Friday<br>9:00 AM &ndash; 6:00 PM EST</p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== FAQ ==================== -->
+  <section class="faq-section">
+    <div class="container">
+      <div class="faq-header">
+        <h2>Frequently Asked Questions</h2>
+        <p>Quick answers to the questions we hear most</p>
+      </div>
+      <div class="faq-list">
+
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false">
+            How do I book a hotel?
+            <span class="faq-icon"></span>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              Booking with Stay Cayman is simple. Browse our curated collection on the <a href="hotels.html" style="color:var(--color-accent);text-decoration:underline;">Hotels</a> page, select your preferred property, choose your dates and room type, and complete your reservation through our secure booking system. You'll receive an instant confirmation email with all the details. If you'd prefer personal assistance, our concierge team is happy to help you find the perfect match.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false">
+            What is the cancellation policy?
+            <span class="faq-icon"></span>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              Most of our hotel partners offer free cancellation up to 48 hours before check-in. Some special rates or peak-season bookings may have different policies, which are always clearly displayed before you confirm your reservation. Experience bookings can typically be cancelled up to 24 hours in advance for a full refund. We recommend reviewing the specific terms for each booking during checkout.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false">
+            Do you offer group bookings?
+            <span class="faq-icon"></span>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              Absolutely! We specialize in group travel for weddings, corporate retreats, family reunions, and special celebrations. For groups of 8 or more rooms, we offer dedicated planning support and often negotiate exclusive rates and perks. Contact us directly at hello@staycayman.com with your group details, and our partnerships team will craft a custom proposal within 48 hours.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false">
+            What's the best time to visit Grand Cayman?
+            <span class="faq-icon"></span>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              Grand Cayman is a year-round destination with average temperatures between 77&deg;F and 88&deg;F. The peak season runs from December through April, offering the driest weather and coolest breezes &mdash; ideal for beach days and diving. The shoulder months of May, June, and November offer excellent value with fewer crowds. Even during the summer rainy season, showers are typically brief and followed by sunshine.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false">
+            How do I get to Grand Cayman?
+            <span class="faq-icon"></span>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              Owen Roberts International Airport (GCM) in George Town serves direct flights from major U.S. cities including Miami, New York (JFK), Charlotte, Dallas, and Atlanta, as well as Toronto and London. Flight times from the U.S. East Coast are typically 3&ndash;4 hours. Several major airlines operate routes including Cayman Airways, American Airlines, JetBlue, United, and British Airways. We can also arrange private airport transfers to your hotel.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false">
+            Do I need a passport?
+            <span class="faq-icon"></span>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              Yes, a valid passport is required for all visitors entering the Cayman Islands. U.S., Canadian, and U.K. citizens do not need a visa for stays up to 30 days. Make sure your passport is valid for at least six months beyond your planned departure date. We recommend checking the latest entry requirements with the Cayman Islands government website before your trip, as policies can change.
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== FOOTER ==================== -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col footer-brand">
+          <h3 class="footer-logo">STAY CAYMAN</h3>
+          <p class="footer-tagline">Boutique hotels &amp; curated experiences<br>on Grand Cayman Island.</p>
+        </div>
+        <div class="footer-col">
+          <h4>Explore</h4>
+          <ul>
+            <li><a href="hotels.html">Hotels</a></li>
+            <li><a href="charters.html">Charters</a></li>
+            <li><a href="experiences.html">Activities</a></li>
+            <li><a href="dining.html">Dining</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Company</h4>
+          <ul>
+            <li><a href="about.html">About Us</a></li>
+            <li><a href="contact.html">Contact</a></li>
+            <li><a href="#">Partner With Us</a></li>
+            <li><a href="#">Press</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Support</h4>
+          <ul>
+            <li><a href="contact.html">Help Center</a></li>
+            <li><a href="#">Cancellation Policy</a></li>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms of Service</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 Stay Cayman. All rights reserved.</p>
+        <div class="footer-social">
+          <a href="#" aria-label="Instagram">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.5"/></svg>
+          </a>
+          <a href="#" aria-label="Facebook">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+          </a>
+          <a href="#" aria-label="Twitter">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+  <script>
+    /* ========== CONTACT FORM VALIDATION & SUBMISSION ========== */
+    (function() {
+      const form = document.getElementById('contactForm');
+      const successMsg = document.getElementById('formSuccess');
+
+      function validateEmail(email) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+      }
+
+      function clearErrors() {
+        form.querySelectorAll('.form-group').forEach(function(g) {
+          g.classList.remove('has-error');
+        });
+      }
+
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        clearErrors();
+        successMsg.classList.remove('visible');
+
+        var valid = true;
+
+        var name = document.getElementById('contactName');
+        if (!name.value.trim()) {
+          document.getElementById('nameGroup').classList.add('has-error');
+          valid = false;
+        }
+
+        var email = document.getElementById('contactEmail');
+        if (!email.value.trim() || !validateEmail(email.value.trim())) {
+          document.getElementById('emailGroup').classList.add('has-error');
+          valid = false;
+        }
+
+        var subject = document.getElementById('contactSubject');
+        if (!subject.value) {
+          document.getElementById('subjectGroup').classList.add('has-error');
+          valid = false;
+        }
+
+        var message = document.getElementById('contactMessage');
+        if (!message.value.trim()) {
+          document.getElementById('messageGroup').classList.add('has-error');
+          valid = false;
+        }
+
+        if (!valid) return;
+
+        /* Simulate submission */
+        form.querySelector('.form-submit-btn').textContent = 'Sending...';
+        form.querySelector('.form-submit-btn').disabled = true;
+
+        setTimeout(function() {
+          successMsg.classList.add('visible');
+          form.reset();
+          form.querySelector('.form-submit-btn').innerHTML = 'Send Message <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>';
+          form.querySelector('.form-submit-btn').disabled = false;
+        }, 800);
+      });
+
+      /* Clear individual errors on input */
+      form.querySelectorAll('input, select, textarea').forEach(function(el) {
+        el.addEventListener('input', function() {
+          el.closest('.form-group').classList.remove('has-error');
+        });
+        el.addEventListener('change', function() {
+          el.closest('.form-group').classList.remove('has-error');
+        });
+      });
+    })();
+
+    /* ========== FAQ ACCORDION ========== */
+    (function() {
+      var faqItems = document.querySelectorAll('.faq-item');
+
+      faqItems.forEach(function(item) {
+        var question = item.querySelector('.faq-question');
+        var answer = item.querySelector('.faq-answer');
+
+        question.addEventListener('click', function() {
+          var isActive = item.classList.contains('active');
+
+          /* Close all other items */
+          faqItems.forEach(function(other) {
+            if (other !== item && other.classList.contains('active')) {
+              other.classList.remove('active');
+              other.querySelector('.faq-question').setAttribute('aria-expanded', 'false');
+              other.querySelector('.faq-answer').style.maxHeight = '0';
+            }
+          });
+
+          /* Toggle current item */
+          if (isActive) {
+            item.classList.remove('active');
+            question.setAttribute('aria-expanded', 'false');
+            answer.style.maxHeight = '0';
+          } else {
+            item.classList.add('active');
+            question.setAttribute('aria-expanded', 'true');
+            answer.style.maxHeight = answer.scrollHeight + 'px';
+          }
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
