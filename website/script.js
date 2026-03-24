@@ -1,48 +1,69 @@
 /* ========================================
-   STAY CAYMAN — JavaScript
+   STAY CAYMAN — Global JavaScript
    ======================================== */
 
 // ---------- NAVBAR SCROLL EFFECT ----------
 const navbar = document.getElementById('navbar');
 
-window.addEventListener('scroll', () => {
-  if (window.scrollY > 80) {
+if (navbar) {
+  // Check if page has a hero — if not, start scrolled
+  const hasHero = document.querySelector('.hero');
+  if (!hasHero) {
     navbar.classList.add('scrolled');
-  } else {
-    navbar.classList.remove('scrolled');
   }
-});
+
+  window.addEventListener('scroll', () => {
+    if (hasHero) {
+      navbar.classList.toggle('scrolled', window.scrollY > 80);
+    }
+  }, { passive: true });
+}
 
 // ---------- MOBILE MENU ----------
 const menuBtn = document.getElementById('menuBtn');
 const mobileMenu = document.getElementById('mobileMenu');
 let menuOpen = false;
 
-menuBtn.addEventListener('click', () => {
-  menuOpen = !menuOpen;
-  mobileMenu.classList.toggle('active', menuOpen);
-  document.body.style.overflow = menuOpen ? 'hidden' : '';
-});
+if (menuBtn && mobileMenu) {
+  menuBtn.addEventListener('click', () => {
+    menuOpen = !menuOpen;
+    mobileMenu.classList.toggle('active', menuOpen);
+    document.body.style.overflow = menuOpen ? 'hidden' : '';
 
-// Close mobile menu on link click
-document.querySelectorAll('.mobile-menu-link').forEach(link => {
-  link.addEventListener('click', () => {
-    menuOpen = false;
-    mobileMenu.classList.remove('active');
-    document.body.style.overflow = '';
+    // Animate hamburger to X
+    const spans = menuBtn.querySelectorAll('span');
+    if (menuOpen) {
+      spans[0].style.transform = 'rotate(45deg) translate(4px, 4px)';
+      spans[1].style.opacity = '0';
+      spans[2].style.transform = 'rotate(-45deg) translate(4px, -4px)';
+    } else {
+      spans[0].style.transform = '';
+      spans[1].style.opacity = '';
+      spans[2].style.transform = '';
+    }
   });
-});
+
+  // Close mobile menu on link click
+  document.querySelectorAll('.mobile-menu-link').forEach(link => {
+    link.addEventListener('click', () => {
+      menuOpen = false;
+      mobileMenu.classList.remove('active');
+      document.body.style.overflow = '';
+    });
+  });
+}
 
 // ---------- SCROLL REVEAL ----------
 const revealElements = () => {
-  // Auto-tag sections for reveal
   const selectors = [
     '.intro',
     '.section-header',
+    '.section-header-center',
     '.featured-hotel',
     '.hotel-card',
     '.experience-card',
     '.neighborhood-card',
+    '.category-card',
     '.testimonial',
     '.newsletter-section .newsletter-title',
     '.parallax-content'
@@ -61,14 +82,14 @@ const handleReveal = () => {
   const reveals = document.querySelectorAll('.reveal');
   const windowHeight = window.innerHeight;
 
-  reveals.forEach((el, i) => {
+  reveals.forEach(el => {
     const top = el.getBoundingClientRect().top;
-    const revealPoint = 100;
+    const revealPoint = 80;
 
     if (top < windowHeight - revealPoint) {
-      // Stagger animation for grid items
-      const delay = el.closest('.hotel-grid, .experience-grid, .neighborhood-grid')
-        ? (Array.from(el.parentElement.children).indexOf(el) % 3) * 100
+      const parent = el.closest('.hotel-grid, .experience-grid, .neighborhood-grid, .categories-grid');
+      const delay = parent
+        ? (Array.from(parent.children).indexOf(el) % 4) * 80
         : 0;
 
       setTimeout(() => {
@@ -78,9 +99,8 @@ const handleReveal = () => {
   });
 };
 
-// Initialize
 revealElements();
-window.addEventListener('scroll', handleReveal);
+window.addEventListener('scroll', handleReveal, { passive: true });
 window.addEventListener('load', handleReveal);
 
 // ---------- PARALLAX EFFECT ----------
@@ -90,13 +110,13 @@ if (parallaxImg) {
   window.addEventListener('scroll', () => {
     const section = parallaxImg.closest('.parallax-section');
     const rect = section.getBoundingClientRect();
-    const speed = 0.3;
+    const speed = 0.25;
 
     if (rect.bottom > 0 && rect.top < window.innerHeight) {
       const yPos = rect.top * speed;
       parallaxImg.style.transform = `translateY(${yPos}px)`;
     }
-  });
+  }, { passive: true });
 }
 
 // ---------- SMOOTH ANCHOR SCROLLING ----------
@@ -108,14 +128,20 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     const target = document.querySelector(href);
     if (target) {
       e.preventDefault();
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const offset = 80; // Account for fixed navbar
+      const top = target.getBoundingClientRect().top + window.scrollY - offset;
+      window.scrollTo({ top, behavior: 'smooth' });
     }
   });
 });
 
-// ---------- SET MIN DATE ON SEARCH INPUTS ----------
-const dateInputs = document.querySelectorAll('.search-field input[type="date"]');
-const today = new Date().toISOString().split('T')[0];
-dateInputs.forEach(input => {
-  input.setAttribute('min', today);
-});
+// ---------- SET MIN DATE ON DATE INPUTS ----------
+const setMinDates = () => {
+  const today = new Date().toISOString().split('T')[0];
+  document.querySelectorAll('input[type="date"]').forEach(input => {
+    if (!input.getAttribute('min')) {
+      input.setAttribute('min', today);
+    }
+  });
+};
+setMinDates();

@@ -17,12 +17,13 @@
       <button class="nav-menu-btn" id="menuBtn" aria-label="Menu">
         <span></span><span></span><span></span>
       </button>
-      <a href="#" class="nav-logo">STAY CAYMAN</a>
+      <a href="index.html" class="nav-logo">STAY CAYMAN</a>
       <div class="nav-actions">
-        <a href="#search" class="nav-link hide-mobile">Search</a>
-        <a href="#hotels" class="nav-link hide-mobile">Hotels</a>
-        <a href="#experiences" class="nav-link hide-mobile">Experiences</a>
-        <a href="#" class="nav-link nav-cta">Book Now</a>
+        <a href="hotels.html" class="nav-link hide-mobile">Hotels</a>
+        <a href="charters.html" class="nav-link hide-mobile">Charters</a>
+        <a href="experiences.html" class="nav-link hide-mobile">Activities</a>
+        <a href="dining.html" class="nav-link hide-mobile">Dining</a>
+        <a href="contact.html" class="nav-link nav-cta">Book Now</a>
       </div>
     </div>
   </nav>
@@ -30,11 +31,12 @@
   <!-- ==================== MOBILE MENU ==================== -->
   <div class="mobile-menu" id="mobileMenu">
     <div class="mobile-menu-inner">
-      <a href="#" class="mobile-menu-link">Hotels</a>
-      <a href="#experiences" class="mobile-menu-link">Experiences</a>
-      <a href="#neighborhoods" class="mobile-menu-link">Neighborhoods</a>
-      <a href="#" class="mobile-menu-link">About Grand Cayman</a>
-      <a href="#" class="mobile-menu-link">Contact</a>
+      <a href="hotels.html" class="mobile-menu-link">Hotels</a>
+      <a href="charters.html" class="mobile-menu-link">Charters</a>
+      <a href="experiences.html" class="mobile-menu-link">Activities</a>
+      <a href="dining.html" class="mobile-menu-link">Dining</a>
+      <a href="about.html" class="mobile-menu-link">About</a>
+      <a href="contact.html" class="mobile-menu-link">Contact</a>
     </div>
   </div>
 
@@ -47,8 +49,8 @@
     <div class="hero-content">
       <p class="hero-eyebrow">Grand Cayman, Cayman Islands</p>
       <h1 class="hero-title">Where Caribbean<br>Luxury Feels Like Home</h1>
-      <p class="hero-subtitle">Hand-picked boutique hotels and unforgettable island experiences</p>
-      <a href="#hotels" class="hero-btn">Explore Hotels</a>
+      <p class="hero-subtitle">Hand-picked boutique hotels, private charters, island activities, and unforgettable dining</p>
+      <a href="#categories" class="hero-btn">Start Exploring</a>
     </div>
     <div class="hero-scroll">
       <span>Scroll</span>
@@ -59,27 +61,109 @@
   <!-- ==================== SEARCH BAR ==================== -->
   <section class="search-section" id="search">
     <div class="container">
-      <div class="search-bar">
+      <form class="search-bar" id="searchForm">
+        <div class="search-field">
+          <label>Category</label>
+          <select id="searchCategory">
+            <option value="all">All Categories</option>
+            <option value="hotels">Hotels</option>
+            <option value="charters">Charters</option>
+            <option value="activities">Activities</option>
+            <option value="dining">Dining</option>
+          </select>
+        </div>
+        <div class="search-divider"></div>
         <div class="search-field">
           <label>Check In</label>
-          <input type="date" placeholder="Select date">
+          <input type="date" id="searchCheckin">
         </div>
         <div class="search-divider"></div>
         <div class="search-field">
           <label>Check Out</label>
-          <input type="date" placeholder="Select date">
+          <input type="date" id="searchCheckout">
         </div>
         <div class="search-divider"></div>
         <div class="search-field">
           <label>Guests</label>
-          <select>
+          <select id="searchGuests">
             <option>1 Guest</option>
             <option>2 Guests</option>
             <option>3 Guests</option>
             <option>4+ Guests</option>
           </select>
         </div>
-        <button class="search-btn">Search</button>
+        <button type="submit" class="search-btn">Search</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- ==================== 4 CATEGORIES ==================== -->
+  <section class="categories-section" id="categories">
+    <div class="container">
+      <div class="section-header-center">
+        <h2 class="section-title">Explore Grand Cayman</h2>
+        <p class="section-subtitle">Four ways to experience the island</p>
+      </div>
+      <div class="categories-grid">
+        <a href="hotels.html" class="category-card">
+          <div class="category-card-img-wrap">
+            <img src="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800&q=80" alt="Luxury hotel suite" class="category-card-img">
+          </div>
+          <div class="category-card-overlay"></div>
+          <div class="category-card-content">
+            <div class="category-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9h1"/><path d="M9 13h1"/><path d="M9 17h1"/></svg>
+            </div>
+            <h3 class="category-card-title">Hotels</h3>
+            <p class="category-card-desc">Boutique resorts and luxury beachfront stays along Seven Mile Beach and beyond</p>
+            <span class="category-card-link">Browse 8 Hotels <span>&rarr;</span></span>
+          </div>
+        </a>
+
+        <a href="charters.html" class="category-card">
+          <div class="category-card-img-wrap">
+            <img src="https://images.unsplash.com/photo-1530053969600-caed2596d242?w=800&q=80" alt="Luxury catamaran sailing" class="category-card-img">
+          </div>
+          <div class="category-card-overlay"></div>
+          <div class="category-card-content">
+            <div class="category-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20a6 6 0 0 0 12 0"/><path d="M2 20h12"/><path d="M8 20V6l8 4"/><path d="M22 18s-2-2-4-2-4 2-4 2"/></svg>
+            </div>
+            <h3 class="category-card-title">Charters</h3>
+            <p class="category-card-desc">Private sailing, fishing, sunset cruises, and yacht charters on crystal waters</p>
+            <span class="category-card-link">Browse 8 Charters <span>&rarr;</span></span>
+          </div>
+        </a>
+
+        <a href="experiences.html" class="category-card">
+          <div class="category-card-img-wrap">
+            <img src="https://images.unsplash.com/photo-1544551763-77ef2d0cfc6c?w=800&q=80" alt="Scuba diving adventure" class="category-card-img">
+          </div>
+          <div class="category-card-overlay"></div>
+          <div class="category-card-content">
+            <div class="category-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+            </div>
+            <h3 class="category-card-title">Activities</h3>
+            <p class="category-card-desc">Diving, kayaking, spa retreats, cooking classes, and hidden island adventures</p>
+            <span class="category-card-link">Browse 8 Activities <span>&rarr;</span></span>
+          </div>
+        </a>
+
+        <a href="dining.html" class="category-card">
+          <div class="category-card-img-wrap">
+            <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80" alt="Gourmet Caribbean cuisine" class="category-card-img">
+          </div>
+          <div class="category-card-overlay"></div>
+          <div class="category-card-content">
+            <div class="category-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+            </div>
+            <h3 class="category-card-title">Dining</h3>
+            <p class="category-card-desc">Fine dining, beachfront seafood, private chefs, and the island's best-kept culinary secrets</p>
+            <span class="category-card-link">Browse 8 Restaurants <span>&rarr;</span></span>
+          </div>
+        </a>
       </div>
     </div>
   </section>
@@ -90,9 +174,9 @@
       <h2 class="section-title">The Island, Curated</h2>
       <p class="intro-text">
         Grand Cayman is more than Seven Mile Beach. We've partnered with the island's
-        most distinctive hotels and local creators to offer stays and experiences you
-        won't find anywhere else — from oceanfront villas to hidden dive spots,
-        private chef dinners to bioluminescent kayak tours.
+        most distinctive hotels, charter captains, and local creators to offer stays and experiences
+        you won't find anywhere else — from oceanfront villas to hidden dive spots,
+        sunset sails to private chef dinners under the stars.
       </p>
     </div>
   </section>
@@ -102,12 +186,12 @@
     <div class="container">
       <div class="section-header">
         <h2 class="section-title">Featured Hotels</h2>
-        <a href="#" class="section-link">View all hotels &rarr;</a>
+        <a href="hotels.html" class="section-link">View all hotels &rarr;</a>
       </div>
 
       <!-- Featured large card -->
       <div class="featured-hotel">
-        <a href="#" class="featured-hotel-link">
+        <a href="hotel-detail.html?id=1" class="featured-hotel-link">
           <div class="featured-hotel-img-wrap">
             <img src="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=1400&q=80" alt="Luxury beachfront resort suite" class="featured-hotel-img">
           </div>
@@ -127,9 +211,9 @@
 
       <!-- Hotel grid -->
       <div class="hotel-grid">
-        <a href="#" class="hotel-card">
+        <a href="hotel-detail.html?id=2" class="hotel-card">
           <div class="hotel-card-img-wrap">
-            <img src="https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&q=80" alt="Boutique hotel with ocean view pool" class="hotel-card-img">
+            <img src="https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&q=80" alt="Boutique hotel pool" class="hotel-card-img">
           </div>
           <div class="hotel-card-info">
             <h3 class="hotel-card-name">Kimpton Seafire Resort</h3>
@@ -138,9 +222,9 @@
           </div>
         </a>
 
-        <a href="#" class="hotel-card">
+        <a href="hotel-detail.html?id=3" class="hotel-card">
           <div class="hotel-card-img-wrap">
-            <img src="https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=800&q=80" alt="Tropical resort with palm trees" class="hotel-card-img">
+            <img src="https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=800&q=80" alt="Tropical resort" class="hotel-card-img">
           </div>
           <div class="hotel-card-info">
             <h3 class="hotel-card-name">Palm Heights</h3>
@@ -149,9 +233,9 @@
           </div>
         </a>
 
-        <a href="#" class="hotel-card">
+        <a href="hotel-detail.html?id=4" class="hotel-card">
           <div class="hotel-card-img-wrap">
-            <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80" alt="Modern luxury villa with private pool" class="hotel-card-img">
+            <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80" alt="Modern luxury villa" class="hotel-card-img">
           </div>
           <div class="hotel-card-info">
             <h3 class="hotel-card-name">The Westin Grand Cayman</h3>
@@ -159,37 +243,49 @@
             <p class="hotel-card-price">From $320 / night</p>
           </div>
         </a>
+      </div>
+    </div>
+  </section>
 
-        <a href="#" class="hotel-card">
+  <!-- ==================== FEATURED CHARTERS ==================== -->
+  <section class="charters-preview-section">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">Popular Charters</h2>
+        <a href="charters.html" class="section-link">View all charters &rarr;</a>
+      </div>
+      <div class="hotel-grid">
+        <a href="charter-detail.html?id=1" class="hotel-card">
           <div class="hotel-card-img-wrap">
-            <img src="https://images.unsplash.com/photo-1540541338287-41700207dee6?w=800&q=80" alt="Beachside cabana and loungers" class="hotel-card-img">
+            <img src="https://images.unsplash.com/photo-1530053969600-caed2596d242?w=800&q=80" alt="Catamaran sailing" class="hotel-card-img">
           </div>
           <div class="hotel-card-info">
-            <h3 class="hotel-card-name">Sunset House</h3>
-            <p class="hotel-card-location">George Town</p>
-            <p class="hotel-card-price">From $195 / night</p>
+            <span class="card-tag-pill">Snorkel Trip</span>
+            <h3 class="hotel-card-name">Stingray City Catamaran</h3>
+            <p class="hotel-card-location">3 Hours &middot; Up to 20 guests</p>
+            <p class="hotel-card-price">From $95 / person</p>
           </div>
         </a>
-
-        <a href="#" class="hotel-card">
+        <a href="charter-detail.html?id=3" class="hotel-card">
           <div class="hotel-card-img-wrap">
-            <img src="https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?w=800&q=80" alt="Elegant hotel room interior" class="hotel-card-img">
+            <img src="https://images.unsplash.com/photo-1500514966906-fe245eea9344?w=800&q=80" alt="Sunset sailing" class="hotel-card-img">
           </div>
           <div class="hotel-card-info">
-            <h3 class="hotel-card-name">Caribbean Club</h3>
-            <p class="hotel-card-location">Seven Mile Beach</p>
-            <p class="hotel-card-price">From $550 / night</p>
+            <span class="card-tag-pill">Sunset Cruise</span>
+            <h3 class="hotel-card-name">Sunset Sail & Cocktails</h3>
+            <p class="hotel-card-location">2.5 Hours &middot; Up to 12 guests</p>
+            <p class="hotel-card-price">From $120 / person</p>
           </div>
         </a>
-
-        <a href="#" class="hotel-card">
+        <a href="charter-detail.html?id=4" class="hotel-card">
           <div class="hotel-card-img-wrap">
-            <img src="https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800&q=80" alt="Infinity pool overlooking the ocean" class="hotel-card-img">
+            <img src="https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?w=800&q=80" alt="Luxury yacht" class="hotel-card-img">
           </div>
           <div class="hotel-card-info">
-            <h3 class="hotel-card-name">The Locale Grand Cayman</h3>
-            <p class="hotel-card-location">Camana Bay</p>
-            <p class="hotel-card-price">From $275 / night</p>
+            <span class="card-tag-pill">Luxury Yacht</span>
+            <h3 class="hotel-card-name">Luxury Yacht Half Day</h3>
+            <p class="hotel-card-location">4 Hours &middot; Up to 8 guests</p>
+            <p class="hotel-card-price">From $2,500 / charter</p>
           </div>
         </a>
       </div>
@@ -206,18 +302,18 @@
     </div>
   </section>
 
-  <!-- ==================== EXPERIENCES ==================== -->
+  <!-- ==================== ACTIVITIES PREVIEW ==================== -->
   <section class="experiences-section" id="experiences">
     <div class="container">
       <div class="section-header">
-        <h2 class="section-title">Island Experiences</h2>
-        <a href="#" class="section-link">View all experiences &rarr;</a>
+        <h2 class="section-title">Island Activities</h2>
+        <a href="experiences.html" class="section-link">View all activities &rarr;</a>
       </div>
 
       <div class="experience-grid">
-        <a href="#" class="experience-card experience-card-tall">
+        <a href="experience-detail.html?id=1" class="experience-card experience-card-tall">
           <div class="experience-card-img-wrap">
-            <img src="https://images.unsplash.com/photo-1544551763-77ef2d0cfc6c?w=800&q=80" alt="Scuba diving in crystal clear water" class="experience-card-img">
+            <img src="https://images.unsplash.com/photo-1544551763-77ef2d0cfc6c?w=800&q=80" alt="Scuba diving" class="experience-card-img">
           </div>
           <div class="experience-card-overlay"></div>
           <div class="experience-card-info">
@@ -227,9 +323,9 @@
           </div>
         </a>
 
-        <a href="#" class="experience-card">
+        <a href="experience-detail.html?id=2" class="experience-card">
           <div class="experience-card-img-wrap">
-            <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80" alt="Gourmet Caribbean cuisine plating" class="experience-card-img">
+            <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80" alt="Gourmet cuisine" class="experience-card-img">
           </div>
           <div class="experience-card-overlay"></div>
           <div class="experience-card-info">
@@ -239,7 +335,7 @@
           </div>
         </a>
 
-        <a href="#" class="experience-card">
+        <a href="experience-detail.html?id=3" class="experience-card">
           <div class="experience-card-img-wrap">
             <img src="https://images.unsplash.com/photo-1476673160081-cf065607f449?w=800&q=80" alt="Kayaking at sunset" class="experience-card-img">
           </div>
@@ -251,39 +347,60 @@
           </div>
         </a>
 
-        <a href="#" class="experience-card experience-card-tall">
+        <a href="experience-detail.html?id=4" class="experience-card experience-card-tall">
           <div class="experience-card-img-wrap">
-            <img src="https://images.unsplash.com/photo-1530053969600-caed2596d242?w=800&q=80" alt="Luxury catamaran sailing" class="experience-card-img">
-          </div>
-          <div class="experience-card-overlay"></div>
-          <div class="experience-card-info">
-            <span class="experience-tag">Sailing</span>
-            <h3 class="experience-card-name">Sunset Catamaran &amp; Stingray City</h3>
-            <p class="experience-card-price">From $120 / person</p>
-          </div>
-        </a>
-
-        <a href="#" class="experience-card">
-          <div class="experience-card-img-wrap">
-            <img src="https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=800&q=80" alt="Luxury spa treatment" class="experience-card-img">
+            <img src="https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=800&q=80" alt="Spa treatment" class="experience-card-img">
           </div>
           <div class="experience-card-overlay"></div>
           <div class="experience-card-info">
             <span class="experience-tag">Wellness</span>
-            <h3 class="experience-card-name">Oceanfront Spa & Sound Healing</h3>
+            <h3 class="experience-card-name">Oceanfront Spa &amp; Sound Healing</h3>
             <p class="experience-card-price">From $200 / person</p>
           </div>
         </a>
+      </div>
+    </div>
+  </section>
 
-        <a href="#" class="experience-card">
-          <div class="experience-card-img-wrap">
-            <img src="https://images.unsplash.com/photo-1519046904884-53103b34b206?w=800&q=80" alt="Pristine beach cove" class="experience-card-img">
+  <!-- ==================== DINING PREVIEW ==================== -->
+  <section class="dining-preview-section">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">Where to Eat</h2>
+        <a href="dining.html" class="section-link">View all restaurants &rarr;</a>
+      </div>
+      <div class="hotel-grid">
+        <a href="dining-detail.html?id=1" class="hotel-card">
+          <div class="hotel-card-img-wrap">
+            <img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&q=80" alt="Fine dining" class="hotel-card-img">
           </div>
-          <div class="experience-card-overlay"></div>
-          <div class="experience-card-info">
-            <span class="experience-tag">Exclusive</span>
-            <h3 class="experience-card-name">Private Beach Picnic at Rum Point</h3>
-            <p class="experience-card-price">From $350 / couple</p>
+          <div class="hotel-card-info">
+            <span class="card-tag-pill">Fine Dining</span>
+            <h3 class="hotel-card-name">Blue by Eric Ripert</h3>
+            <p class="hotel-card-location">The Ritz-Carlton &middot; $$$$</p>
+            <p class="hotel-card-price">Reserve a Table</p>
+          </div>
+        </a>
+        <a href="dining-detail.html?id=2" class="hotel-card">
+          <div class="hotel-card-img-wrap">
+            <img src="https://images.unsplash.com/photo-1559339352-11d035aa65de?w=800&q=80" alt="Seafood restaurant" class="hotel-card-img">
+          </div>
+          <div class="hotel-card-info">
+            <span class="card-tag-pill">Seafood</span>
+            <h3 class="hotel-card-name">The Wharf</h3>
+            <p class="hotel-card-location">George Town &middot; $$$</p>
+            <p class="hotel-card-price">Reserve a Table</p>
+          </div>
+        </a>
+        <a href="dining-detail.html?id=3" class="hotel-card">
+          <div class="hotel-card-img-wrap">
+            <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&q=80" alt="Caribbean restaurant" class="hotel-card-img">
+          </div>
+          <div class="hotel-card-info">
+            <span class="card-tag-pill">Caribbean</span>
+            <h3 class="hotel-card-name">Agua</h3>
+            <p class="hotel-card-location">Camana Bay &middot; $$$</p>
+            <p class="hotel-card-price">Reserve a Table</p>
           </div>
         </a>
       </div>
@@ -297,39 +414,39 @@
       <p class="section-subtitle">Grand Cayman's most captivating neighborhoods</p>
 
       <div class="neighborhood-grid">
-        <a href="#" class="neighborhood-card">
-          <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=700&q=80" alt="Seven Mile Beach aerial view" class="neighborhood-img">
+        <a href="hotels.html" class="neighborhood-card">
+          <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=700&q=80" alt="Seven Mile Beach" class="neighborhood-img">
           <div class="neighborhood-overlay"></div>
           <div class="neighborhood-info">
             <h3>Seven Mile Beach</h3>
-            <p>12 Hotels</p>
+            <p>12 Hotels &middot; 15 Restaurants</p>
           </div>
         </a>
 
-        <a href="#" class="neighborhood-card">
-          <img src="https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?w=700&q=80" alt="George Town waterfront" class="neighborhood-img">
+        <a href="hotels.html" class="neighborhood-card">
+          <img src="https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?w=700&q=80" alt="George Town" class="neighborhood-img">
           <div class="neighborhood-overlay"></div>
           <div class="neighborhood-info">
             <h3>George Town</h3>
-            <p>6 Hotels</p>
+            <p>6 Hotels &middot; 10 Restaurants</p>
           </div>
         </a>
 
-        <a href="#" class="neighborhood-card">
-          <img src="https://images.unsplash.com/photo-1468413253725-0d5181091126?w=700&q=80" alt="Rum Point beach" class="neighborhood-img">
+        <a href="hotels.html" class="neighborhood-card">
+          <img src="https://images.unsplash.com/photo-1468413253725-0d5181091126?w=700&q=80" alt="Rum Point" class="neighborhood-img">
           <div class="neighborhood-overlay"></div>
           <div class="neighborhood-info">
             <h3>Rum Point</h3>
-            <p>3 Hotels</p>
+            <p>3 Hotels &middot; 4 Restaurants</p>
           </div>
         </a>
 
-        <a href="#" class="neighborhood-card">
-          <img src="https://images.unsplash.com/photo-1549480017-d76466a4b7e8?w=700&q=80" alt="East End coastline" class="neighborhood-img">
+        <a href="hotels.html" class="neighborhood-card">
+          <img src="https://images.unsplash.com/photo-1549480017-d76466a4b7e8?w=700&q=80" alt="East End" class="neighborhood-img">
           <div class="neighborhood-overlay"></div>
           <div class="neighborhood-info">
             <h3>East End</h3>
-            <p>4 Hotels</p>
+            <p>4 Hotels &middot; 5 Restaurants</p>
           </div>
         </a>
       </div>
@@ -341,9 +458,9 @@
     <div class="container container-narrow">
       <blockquote class="testimonial">
         <p>&ldquo;Stay Cayman transformed our trip from a simple vacation into something truly
-        unforgettable. The hotel was stunning and the private dive experience was the
-        highlight of our year.&rdquo;</p>
-        <cite>— Sarah & James T., New York</cite>
+        unforgettable. The hotel was stunning, the private charter was magical, and the
+        dining reservations were the highlight of our year.&rdquo;</p>
+        <cite>— Sarah &amp; James T., New York</cite>
       </blockquote>
     </div>
   </section>
@@ -353,7 +470,7 @@
     <div class="container container-narrow">
       <h2 class="newsletter-title">Stay in the Know</h2>
       <p class="newsletter-subtitle">Insider rates, new hotels, and exclusive island experiences — delivered monthly.</p>
-      <form class="newsletter-form" onsubmit="event.preventDefault()">
+      <form class="newsletter-form" onsubmit="event.preventDefault(); this.innerHTML='<p style=\'color:rgba(255,255,255,0.8);font-size:1rem;\'>Thank you! You\'re on the list.</p>';">
         <input type="email" placeholder="Your email address" class="newsletter-input" required>
         <button type="submit" class="newsletter-btn">Subscribe</button>
       </form>
@@ -366,30 +483,30 @@
       <div class="footer-grid">
         <div class="footer-col footer-brand">
           <h3 class="footer-logo">STAY CAYMAN</h3>
-          <p class="footer-tagline">Boutique hotels &amp; curated experiences<br>on Grand Cayman Island.</p>
+          <p class="footer-tagline">Boutique hotels, private charters, island activities &amp; curated dining on Grand Cayman.</p>
         </div>
         <div class="footer-col">
           <h4>Explore</h4>
           <ul>
-            <li><a href="#">All Hotels</a></li>
-            <li><a href="#">Experiences</a></li>
-            <li><a href="#">Neighborhoods</a></li>
-            <li><a href="#">Last-Minute Deals</a></li>
+            <li><a href="hotels.html">Hotels</a></li>
+            <li><a href="charters.html">Charters</a></li>
+            <li><a href="experiences.html">Activities</a></li>
+            <li><a href="dining.html">Dining</a></li>
           </ul>
         </div>
         <div class="footer-col">
           <h4>Company</h4>
           <ul>
-            <li><a href="#">About Us</a></li>
+            <li><a href="about.html">About Us</a></li>
+            <li><a href="contact.html">Contact</a></li>
             <li><a href="#">Partner With Us</a></li>
-            <li><a href="#">Careers</a></li>
             <li><a href="#">Press</a></li>
           </ul>
         </div>
         <div class="footer-col">
           <h4>Support</h4>
           <ul>
-            <li><a href="#">Help Center</a></li>
+            <li><a href="contact.html">Help Center</a></li>
             <li><a href="#">Cancellation Policy</a></li>
             <li><a href="#">Privacy Policy</a></li>
             <li><a href="#">Terms of Service</a></li>
@@ -414,5 +531,29 @@
   </footer>
 
   <script src="script.js"></script>
+  <script>
+    // Search form functionality
+    document.getElementById('searchForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const category = document.getElementById('searchCategory').value;
+      const pages = {
+        hotels: 'hotels.html',
+        charters: 'charters.html',
+        activities: 'experiences.html',
+        dining: 'dining.html',
+        all: 'hotels.html'
+      };
+      const checkin = document.getElementById('searchCheckin').value;
+      const checkout = document.getElementById('searchCheckout').value;
+      const guests = document.getElementById('searchGuests').value;
+      let url = pages[category] || 'hotels.html';
+      const params = new URLSearchParams();
+      if (checkin) params.set('checkin', checkin);
+      if (checkout) params.set('checkout', checkout);
+      if (guests) params.set('guests', guests);
+      if (params.toString()) url += '?' + params.toString();
+      window.location.href = url;
+    });
+  </script>
 </body>
 </html>
