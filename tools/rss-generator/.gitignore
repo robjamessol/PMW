@@ -1,0 +1,6 @@
+.env
+feed.xml
+.seen.json
+__pycache__/
+*.pyc
+.venv/
