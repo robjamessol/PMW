@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>PDF Text Editor</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --border: #2a2f3a;
+    --text: #e8ecf1;
+    --muted: #9aa3b2;
+    --accent: #4f8cff;
+    --accent-hover: #3b78ee;
+    --danger: #ef4444;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--text);
+    display: flex; flex-direction: column;
+  }
+  header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 16px; background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  header h1 { font-size: 16px; margin: 0 12px 0 0; font-weight: 600; }
+  button, label.btn {
+    background: var(--accent); color: white; border: 0;
+    padding: 8px 14px; border-radius: 6px; cursor: pointer;
+    font-size: 14px; font-weight: 500;
+  }
+  button:hover, label.btn:hover { background: var(--accent-hover); }
+  button:disabled { background: #3a3f4b; color: #888; cursor: not-allowed; }
+  button.secondary { background: #2a2f3a; }
+  button.secondary:hover { background: #353b48; }
+  input[type="file"] { display: none; }
+  .info { color: var(--muted); font-size: 13px; margin-left: auto; }
+  main {
+    flex: 1; overflow: auto; display: flex; flex-direction: column;
+    align-items: center; padding: 20px; gap: 20px;
+  }
+  .page-wrap {
+    position: relative; background: white;
+    box-shadow: 0 4px 20px rgba(0,0,0,.4);
+  }
+  canvas { display: block; }
+  .text-layer {
+    position: absolute; inset: 0; overflow: hidden;
+    pointer-events: none;
+  }
+  .text-item {
+    position: absolute; white-space: pre;
+    transform-origin: 0 0;
+    color: transparent;
+    cursor: text;
+    pointer-events: auto;
+    user-select: text;
+    padding: 0; margin: 0;
+    outline: none;
+    background: transparent;
+    line-height: 1;
+  }
+  .text-item:hover {
+    background: rgba(79, 140, 255, 0.18);
+    color: rgba(0,0,0,0.001);
+  }
+  .text-item.edited {
+    background: rgba(255, 200, 0, 0.25);
+    color: rgba(0,0,0,0.001);
+  }
+  .text-item:focus {
+    background: rgba(79, 140, 255, 0.28);
+    color: rgba(0,0,0,0.001);
+  }
+  .empty {
+    text-align: center; color: var(--muted); margin-top: 80px;
+    max-width: 520px;
+  }
+  .empty h2 { color: var(--text); margin-bottom: 12px; }
+  .empty p { line-height: 1.6; }
+  kbd {
+    background: #2a2f3a; padding: 2px 6px; border-radius: 4px;
+    font-size: 12px; border: 1px solid var(--border);
+  }
+  .loading {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+    display: none; align-items: center; justify-content: center;
+    z-index: 100;
+  }
+  .loading.show { display: flex; }
+  .spinner {
+    background: var(--panel); padding: 20px 30px; border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>PDF Text Editor</h1>
+  <label class="btn" for="file-input">Open PDF</label>
+  <input type="file" id="file-input" accept="application/pdf" />
+  <button id="save-btn" disabled>Save as PDF</button>
+  <button id="reset-btn" class="secondary" disabled>Reset Edits</button>
+  <span class="info" id="status">No file loaded</span>
+</header>
+
+<main id="main">
+  <div class="empty" id="empty-state">
+    <h2>Edit text inside any PDF</h2>
+    <p>
+      Click <strong>Open PDF</strong> to load a file. Click any text on the page
+      to edit it inline, then press <kbd>Save as PDF</kbd> to download the
+      modified document.
+    </p>
+    <p style="margin-top:16px; font-size:12px;">
+      Edited text is overlaid on top of a white block covering the original.
+      Works best for simple single-line text. Complex layouts, embedded fonts,
+      and scanned PDFs may not round-trip perfectly.
+    </p>
+  </div>
+</main>
+
+<div class="loading" id="loading"><div class="spinner" id="loading-text">Loading…</div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script>
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js";
+
+  const RENDER_SCALE = 1.5;
+  let originalBytes = null;
+  let pdfDoc = null;
+  /** edits[pageIndex] = [{ originalText, newText, x, y, width, height, fontSize }] */
+  let edits = [];
+
+  const fileInput = document.getElementById("file-input");
+  const saveBtn = document.getElementById("save-btn");
+  const resetBtn = document.getElementById("reset-btn");
+  const statusEl = document.getElementById("status");
+  const main = document.getElementById("main");
+  const emptyState = document.getElementById("empty-state");
+  const loading = document.getElementById("loading");
+  const loadingText = document.getElementById("loading-text");
+
+  function showLoading(msg) {
+    loadingText.textContent = msg || "Loading…";
+    loading.classList.add("show");
+  }
+  function hideLoading() { loading.classList.remove("show"); }
+
+  fileInput.addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    showLoading("Loading PDF…");
+    try {
+      originalBytes = await file.arrayBuffer();
+      await loadPdf(originalBytes);
+      statusEl.textContent = file.name;
+      saveBtn.disabled = false;
+      resetBtn.disabled = false;
+    } catch (err) {
+      console.error(err);
+      alert("Failed to load PDF: " + err.message);
+    } finally {
+      hideLoading();
+    }
+  });
+
+  async function loadPdf(bytes) {
+    emptyState.remove();
+    main.innerHTML = "";
+    edits = [];
+    const loadingTask = pdfjsLib.getDocument({ data: bytes.slice(0) });
+    pdfDoc = await loadingTask.promise;
+    for (let i = 1; i <= pdfDoc.numPages; i++) {
+      edits.push([]);
+      await renderPage(i);
+    }
+  }
+
+  async function renderPage(pageNum) {
+    const page = await pdfDoc.getPage(pageNum);
+    const viewport = page.getViewport({ scale: RENDER_SCALE });
+    const wrap = document.createElement("div");
+    wrap.className = "page-wrap";
+    wrap.style.width = viewport.width + "px";
+    wrap.style.height = viewport.height + "px";
+    wrap.dataset.page = pageNum;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    wrap.appendChild(canvas);
+
+    const textLayer = document.createElement("div");
+    textLayer.className = "text-layer";
+    wrap.appendChild(textLayer);
+    main.appendChild(wrap);
+
+    await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
+
+    const textContent = await page.getTextContent();
+    const pdfPageHeight = page.getViewport({ scale: 1 }).height;
+
+    textContent.items.forEach((item, idx) => {
+      if (!item.str || item.str.trim() === "") return;
+      const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
+      // tx = [a, b, c, d, e, f]; fontHeight in screen px ~ sqrt(tx[2]^2 + tx[3]^2)
+      const fontHeight = Math.hypot(tx[2], tx[3]);
+      const left = tx[4];
+      const top = tx[5] - fontHeight;
+
+      const span = document.createElement("span");
+      span.className = "text-item";
+      span.contentEditable = "true";
+      span.spellcheck = false;
+      span.textContent = item.str;
+      span.style.left = left + "px";
+      span.style.top = top + "px";
+      span.style.fontSize = fontHeight + "px";
+      span.style.fontFamily = "sans-serif";
+      span.dataset.original = item.str;
+      span.dataset.page = pageNum;
+      span.dataset.idx = idx;
+
+      // Store PDF-space coordinates for later rewriting.
+      // item.transform is in PDF user space; pdf-lib origin is bottom-left.
+      const pdfFontSize = Math.hypot(item.transform[2], item.transform[3]);
+      const pdfX = item.transform[4];
+      const pdfY = item.transform[5];
+      const pdfWidth = item.width;
+
+      span.dataset.pdfX = pdfX;
+      span.dataset.pdfY = pdfY;
+      span.dataset.pdfWidth = pdfWidth;
+      span.dataset.pdfHeight = item.height || pdfFontSize;
+      span.dataset.pdfFontSize = pdfFontSize;
+      span.dataset.pdfPageHeight = pdfPageHeight;
+
+      span.addEventListener("input", () => {
+        if (span.textContent !== span.dataset.original) {
+          span.classList.add("edited");
+        } else {
+          span.classList.remove("edited");
+        }
+      });
+      span.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") { e.preventDefault(); span.blur(); }
+      });
+
+      textLayer.appendChild(span);
+    });
+  }
+
+  resetBtn.addEventListener("click", () => {
+    if (!originalBytes) return;
+    if (!confirm("Discard all edits?")) return;
+    showLoading("Reloading…");
+    loadPdf(originalBytes).finally(hideLoading);
+  });
+
+  saveBtn.addEventListener("click", async () => {
+    if (!originalBytes) return;
+    showLoading("Building PDF…");
+    try {
+      const { PDFDocument, StandardFonts, rgb } = PDFLib;
+      const outDoc = await PDFDocument.load(originalBytes);
+      const font = await outDoc.embedFont(StandardFonts.Helvetica);
+      const pages = outDoc.getPages();
+
+      const spans = document.querySelectorAll(".text-item.edited");
+      spans.forEach((span) => {
+        const pageIndex = parseInt(span.dataset.page, 10) - 1;
+        const page = pages[pageIndex];
+        const pageHeight = page.getHeight();
+
+        const pdfX = parseFloat(span.dataset.pdfX);
+        const pdfY = parseFloat(span.dataset.pdfY);
+        const pdfWidth = parseFloat(span.dataset.pdfWidth);
+        const pdfHeight = parseFloat(span.dataset.pdfHeight);
+        const pdfFontSize = parseFloat(span.dataset.pdfFontSize);
+        const newText = span.textContent;
+
+        // White out old text (a bit of padding).
+        const pad = pdfFontSize * 0.15;
+        page.drawRectangle({
+          x: pdfX - pad,
+          y: pdfY - pad,
+          width: pdfWidth + pad * 2,
+          height: pdfFontSize + pad * 2,
+          color: rgb(1, 1, 1),
+        });
+
+        // Draw new text in Helvetica. Shrink font size to fit width if needed.
+        let fontSize = pdfFontSize;
+        const targetWidth = pdfWidth;
+        const measured = font.widthOfTextAtSize(newText, fontSize);
+        if (measured > targetWidth && targetWidth > 0) {
+          fontSize = fontSize * (targetWidth / measured);
+        }
+        page.drawText(newText, {
+          x: pdfX,
+          y: pdfY,
+          size: fontSize,
+          font,
+          color: rgb(0, 0, 0),
+        });
+      });
+
+      const bytes = await outDoc.save();
+      const blob = new Blob([bytes], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const base = (statusEl.textContent || "document.pdf").replace(/\.pdf$/i, "");
+      a.download = base + "-edited.pdf";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save: " + err.message);
+    } finally {
+      hideLoading();
+    }
+  });
+</script>
+</body>
+</html>
