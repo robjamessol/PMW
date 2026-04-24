@@ -154,7 +154,7 @@
     showError("Failed to load pdf-lib from CDN. Check your network and reload.");
   }
 
-  const RENDER_SCALE = 1.5;
+  const RENDER_SCALE = 2.0;
   let originalBytes = null;
   let pdfDoc = null;
 
@@ -204,17 +204,21 @@
 
   async function renderPage(pageNum) {
     const page = await pdfDoc.getPage(pageNum);
-    const viewport = page.getViewport({ scale: RENDER_SCALE });
+    const dpr = window.devicePixelRatio || 1;
+    const cssViewport = page.getViewport({ scale: RENDER_SCALE });
+    const renderViewport = page.getViewport({ scale: RENDER_SCALE * dpr });
 
     const wrap = document.createElement("div");
     wrap.className = "page-wrap";
-    wrap.style.width = viewport.width + "px";
-    wrap.style.height = viewport.height + "px";
+    wrap.style.width = cssViewport.width + "px";
+    wrap.style.height = cssViewport.height + "px";
     wrap.dataset.page = pageNum;
 
     const canvas = document.createElement("canvas");
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
+    canvas.width = renderViewport.width;
+    canvas.height = renderViewport.height;
+    canvas.style.width = cssViewport.width + "px";
+    canvas.style.height = cssViewport.height + "px";
     wrap.appendChild(canvas);
 
     const textLayer = document.createElement("div");
@@ -223,17 +227,17 @@
     main.appendChild(wrap);
 
     const ctx = canvas.getContext("2d");
-    await page.render({ canvasContext: ctx, viewport }).promise;
+    await page.render({ canvasContext: ctx, viewport: renderViewport }).promise;
 
     const textContent = await page.getTextContent();
 
     textContent.items.forEach((item, idx) => {
       if (!item.str || item.str.length === 0) return;
-      const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
+      const tx = pdfjsLib.Util.transform(cssViewport.transform, item.transform);
       const fontHeight = Math.hypot(tx[2], tx[3]);
       const left = tx[4];
       const top = tx[5] - fontHeight;
-      const widthPx = item.width * viewport.scale;
+      const widthPx = item.width * cssViewport.scale;
 
       const span = document.createElement("span");
       span.className = "text-item";
@@ -284,10 +288,12 @@
   function eraseOriginalOnCanvas(canvas, span) {
     if (span.dataset.erased === "1") return;
     const ctx = canvas.getContext("2d");
-    const x = parseFloat(span.dataset.canvasX);
-    const y = parseFloat(span.dataset.canvasY);
-    const w = parseFloat(span.dataset.canvasW);
-    const h = parseFloat(span.dataset.canvasH);
+    const cssW = parseFloat(canvas.style.width) || canvas.width;
+    const ratio = canvas.width / cssW;
+    const x = parseFloat(span.dataset.canvasX) * ratio;
+    const y = parseFloat(span.dataset.canvasY) * ratio;
+    const w = parseFloat(span.dataset.canvasW) * ratio;
+    const h = parseFloat(span.dataset.canvasH) * ratio;
     const pad = h * 0.2;
     ctx.save();
     ctx.fillStyle = "#ffffff";
