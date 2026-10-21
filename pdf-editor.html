@@ -1714,9 +1714,11 @@
     s.classList.remove("editing");
     s.style.color = "";
     s.style.background = "";
+    const prevText = currentEdit(t) ? currentEdit(t).text : t.text;
     const text = s.textContent.replace(/[\r\n]+/g, " ").replace(/[​-‍﻿]/g, "").replace(/ /g, " ");
     commit(t, text, t.pendingAlign);
     refresh(null);
+    if (text !== prevText) offerRebalance(t, prevText, text);
   }
 
   function commit(t, text, align) {
@@ -2019,17 +2021,27 @@
   const keyRemember = document.getElementById("chat-key-remember");
   const keyStatus = document.getElementById("chat-key-status");
 
-  const SYSTEM = `You are the assistant inside a browser-based PDF text editor. The user has opened a PDF (usually an invoice or receipt) and tells you in plain language what text to change. You change text with the edit_text tool; the editor rewrites it in place in the PDF's original font, weight, size and colour.
+  const SYSTEM = `You are the assistant inside a browser-based PDF text editor. The user has opened a PDF (usually an invoice or receipt) that they want to adjust, and tells you in plain language what to change. You change text with the edit_text tool; the editor rewrites it in place in the PDF's original font, weight, size and colour.
 
-Every piece of text on the pages is listed in the document below as an item: its id, page, position in points from the top-left corner, width, size, style, colour, how it is aligned, and its original text. Each user message starts with an <editor_state> block giving the current text of any item already edited, by you or by the user clicking on the page.
+Every piece of text on the pages is listed in the document below as an item: its id, page, position in points from the top-left corner, width, size, style, colour, how it is aligned, and its original text. Items on one line share a y position; items in one table column share a left or right edge. Each user message starts with an <editor_state> block giving the current text of any item already edited, by you or by the user clicking on the page.
 
-- Change only what the user asks for. Match the format of the text you replace: currency symbol, thousands separators, decimal places, date style, capitalisation and spacing.
+Editing text:
+- Match the format of the text you replace: currency symbol, thousands separators, decimal places, date style, capitalisation and spacing.
 - Each edit gives an item's complete new text, not only the changed part.
-- When the user asks you to recalculate (for example "update the totals"), work the arithmetic out from the figures on the page and edit every figure that depends on the change. When they don't ask, leave other figures alone, but say which ones no longer add up.
-- If a request could mean several items and it isn't clear whether they mean all of them, ask a short question instead of guessing.
 - Leave align as "auto" (keeps the original alignment) unless the user asks for an alignment.
 - To undo an edit, set the item back to its original text.
-- After editing, reply in one or two short sentences saying what changed. If the editor reports that characters were drawn with a substitute font, mention it briefly.`;
+- If a request could mean several items and it isn't clear whether they mean all of them, ask a short question instead of guessing.
+
+Keeping the figures consistent:
+Whenever an amount changes, the document must still add up afterwards; the user doesn't need to ask for this. First work out the document's arithmetic from the original figures: which rows are line items (quantity × unit price = line amount) and how the subtotal, discounts, tax, shipping or other fees, total, amount paid and balance due relate. Find the tax rate (a stated rate, or the tax divided by the amount it was charged on) and whether prices include tax.
+- A figure the user sets is fixed. Recalculate everything that depends on it: a line amount changes the subtotal, which changes the tax, total and balance due.
+- When the user sets a new total (or subtotal or balance due), work backwards. Keep the tax rate, the quantities, percentage discounts and fixed charges such as shipping as they are, and scale the unit prices of the line items in proportion, so that every line amount, the subtotal, the tax and the total agree with the new figure.
+- Round every figure the way the document does (normally to the cent) and hit the requested figure exactly: put any leftover cents on a line whose quantity is 1, or on the largest line if its quantity allows. If no combination can hit it exactly, use the closest and say so.
+- If the user says which item should absorb a change, or that only one figure should change, do that instead.
+- Update every place a changed figure appears, including repeated totals, amount-due summaries and amounts written in words.
+- Use the calculate tool for the arithmetic, and check that every line, the subtotal, the tax and the total agree to the cent before you call edit_text.
+
+After editing, reply in plain text (no Markdown): list each figure you changed as old → new, and say which tax rate you kept. If the editor reports that characters were drawn with a substitute font, mention it in one short line.`;
 
   const TOOLS = [{
     name: "edit_text",
@@ -2058,7 +2070,87 @@ Every piece of text on the pages is listed in the document below as an item: its
       required: ["edits"],
       additionalProperties: false,
     },
+  }, {
+    name: "calculate",
+    description: "Exact decimal arithmetic. Each expression may use numbers, + - * / and parentheses; no currency symbols, thousands separators or % signs (write 7.5% as 0.075). Returns each exact result and the result rounded to 2 decimal places (half away from zero).",
+    strict: true,
+    input_schema: {
+      type: "object",
+      properties: {
+        expressions: { type: "array", items: { type: "string" }, description: "Expressions to evaluate, e.g. \"3 * 85.00\" or \"2395 / 1.075\"." },
+      },
+      required: ["expressions"],
+      additionalProperties: false,
+    },
   }];
+
+  // Exact arithmetic on fractions of BigInts, so money never meets float rounding.
+  function calc(src) {
+    const s = String(src).replace(/\s+/g, "");
+    if (!s || s.length > 500) throw new Error("empty or too long");
+    let i = 0;
+    const gcd = (a, b) => { if (a < 0n) a = -a; while (b) [a, b] = [b, a % b]; return a; };
+    const frac = (n, d) => {
+      if (d === 0n) throw new Error("division by zero");
+      if (d < 0n) { n = -n; d = -d; }
+      const g = gcd(n, d) || 1n;
+      return { n: n / g, d: d / g };
+    };
+    const expr = () => {
+      let v = term();
+      while (s[i] === "+" || s[i] === "-") {
+        const op = s[i++], r = term();
+        v = frac(op === "+" ? v.n * r.d + r.n * v.d : v.n * r.d - r.n * v.d, v.d * r.d);
+      }
+      return v;
+    };
+    const term = () => {
+      let v = factor();
+      while (s[i] === "*" || s[i] === "/") {
+        const op = s[i++], r = factor();
+        v = op === "*" ? frac(v.n * r.n, v.d * r.d) : frac(v.n * r.d, v.d * r.n);
+      }
+      return v;
+    };
+    const factor = () => {
+      if (s[i] === "-") { i++; const v = factor(); return { n: -v.n, d: v.d }; }
+      if (s[i] === "+") { i++; return factor(); }
+      if (s[i] === "(") {
+        i++;
+        const v = expr();
+        if (s[i++] !== ")") throw new Error("missing )");
+        return v;
+      }
+      const m = /^(?:\d+(?:\.\d*)?|\.\d+)/.exec(s.slice(i));
+      if (!m) throw new Error("unexpected " + (s[i] ? "'" + s[i] + "'" : "end"));
+      i += m[0].length;
+      const [w, f = ""] = m[0].split(".");
+      return frac(BigInt((w || "0") + f), 10n ** BigInt(f.length));
+    };
+    const v = expr();
+    if (i < s.length) throw new Error("unexpected '" + s[i] + "'");
+    return v;
+  }
+  function calcExact(v) {
+    const neg = v.n < 0n, n = neg ? -v.n : v.n;
+    let r = n % v.d, digits = "";
+    for (let k = 0; k < 12 && r; k++) { r *= 10n; digits += (r / v.d).toString(); r %= v.d; }
+    return (neg ? "-" : "") + (n / v.d) + (digits ? "." + digits : "") + (r ? "…" : "");
+  }
+  function calcCents(v) {
+    const neg = v.n < 0n, n = neg ? -v.n : v.n;
+    const c = (n * 200n + v.d) / (2n * v.d);
+    return (neg && c ? "-" : "") + (c / 100n) + "." + (c % 100n).toString().padStart(2, "0");
+  }
+  function runCalculateTool(input) {
+    const list = input && Array.isArray(input.expressions) ? input.expressions.slice(0, 200) : null;
+    if (!list) return { content: "Invalid input: expected {expressions: [...]}.", is_error: true };
+    const out = list.map((e) => {
+      try { const v = calc(e); return { expression: e, exact: calcExact(v), rounded: calcCents(v) }; }
+      catch (err) { return { expression: e, error: err.message }; }
+    });
+    return { content: JSON.stringify(out), is_error: false };
+  }
 
   const C = { key: "", remember: false, history: [], snapshot: null, busy: false, sdk: null, client: null };
   try { C.key = localStorage.getItem(KEY_STORE) || ""; C.remember = !!C.key; } catch (e) { /* storage blocked */ }
@@ -2178,6 +2270,41 @@ Every piece of text on the pages is listed in the document below as an item: its
     return [...notes];
   }
 
+  // After the user changes an amount by clicking on the page, offer to make
+  // the rest of the document add up again.
+  const AMOUNT = /^[^\p{L}]*\d[\d.,\s]*[^\p{L}]*$/u;
+  function labelFor(t) {
+    const b = t.geo.box, h = b.y1 - b.y0;
+    let best = null;
+    for (const o of S.pages[t.page].items) {
+      if (o === t || !o.span || !/\p{L}/u.test(currentText(o))) continue;
+      const ob = o.geo.box;
+      if (Math.min(ob.y1, b.y1) - Math.max(ob.y0, b.y0) < 0.5 * h || ob.x1 > b.x0 + 1) continue;
+      if (!best || ob.x1 > best.geo.box.x1) best = o;
+    }
+    return best ? currentText(best) : "";
+  }
+  function offerRebalance(t, oldText, newText) {
+    if (!C.key || !S.doc || chatPanel.hidden) return;
+    if (!AMOUNT.test(oldText) || !AMOUNT.test(newText) || oldText.replace(/\D/g, "") === newText.replace(/\D/g, "")) return;
+    const label = labelFor(t);
+    const msg = botSay(`You changed ${label ? label + " " : ""}from ${oldText} to ${newText}.`);
+    const wrap = document.createElement("div");
+    wrap.className = "msg-actions";
+    const b = document.createElement("button");
+    b.className = "secondary small";
+    b.textContent = "Update tax and line items to match";
+    b.addEventListener("click", () => {
+      if (C.busy) return;
+      wrap.remove();
+      const q = `I changed ${label ? label + " (" + t.id + ")" : t.id} from ${JSON.stringify(oldText)} to ${JSON.stringify(newText)} on the page. Update the other figures so the document adds up.`;
+      say("user", q);
+      handleChat(q);
+    });
+    wrap.appendChild(b);
+    msg.appendChild(wrap);
+  }
+
   async function handleChat(text) {
     setBusy(true);
     try {
@@ -2283,13 +2410,13 @@ Every piece of text on the pages is listed in the document below as an item: its
       const client = await getClient();
       if (!C.snapshot) C.snapshot = documentSnapshot();
       C.history.push({ role: "user", content: [{ type: "text", text: editorState() }, { type: "text", text }] });
-      for (let turn = 0; turn < 8; turn++) {
+      for (let turn = 0; turn < 16; turn++) {
         const response = await client.beta.messages.create({
           model: MODEL,
           max_tokens: 16000,
           betas: ["server-side-fallback-2026-07-01"],
           fallbacks: "default",
-          output_config: { effort: "medium" },
+          output_config: { effort: "high" },
           cache_control: { type: "ephemeral" },
           system: [{ type: "text", text: SYSTEM }, { type: "text", text: C.snapshot }],
           tools: TOOLS,
@@ -2311,8 +2438,10 @@ Every piece of text on the pages is listed in the document below as an item: its
         const results = [];
         for (const b of response.content) {
           if (b.type !== "tool_use") continue;
-          if (b.name !== "edit_text") { results.push({ type: "tool_result", tool_use_id: b.id, content: "Unknown tool.", is_error: true }); continue; }
-          const r = await runEditTool(b.input, before);
+          let r;
+          if (b.name === "edit_text") r = await runEditTool(b.input, before);
+          else if (b.name === "calculate") r = runCalculateTool(b.input);
+          else r = { content: "Unknown tool.", is_error: true };
           results.push({ type: "tool_result", tool_use_id: b.id, content: r.content, is_error: r.is_error });
         }
         C.history.push({ role: "user", content: results });
