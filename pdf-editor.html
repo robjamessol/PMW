@@ -38,14 +38,16 @@
   button.secondary:hover { background: #353b48; }
   input[type="file"] { display: none; }
   .info { color: var(--muted); font-size: 13px; margin-left: auto; max-width: 50%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .workspace { flex: 1; display: flex; min-height: 0; }
   main {
-    flex: 1; overflow: auto; display: flex; flex-direction: column;
-    align-items: center; padding: 20px; gap: 20px;
+    flex: 1; min-width: 0; overflow: auto; display: flex; flex-direction: column;
+    align-items: flex-start; padding: 20px; gap: 20px;
   }
   .page-wrap {
     position: relative; background: white;
     box-shadow: 0 4px 20px rgba(0,0,0,.4);
     flex: none;
+    margin: 0 auto; /* centred, yet still scrollable when wider than the window */
   }
   canvas { display: block; }
   .text-layer {
@@ -93,7 +95,7 @@
   .edit-bar button.on { background: var(--accent); }
   .edit-bar .sep { width: 1px; align-self: stretch; background: var(--border); margin: 0 2px; padding: 0; }
   .empty {
-    text-align: center; color: var(--muted); margin-top: 80px;
+    text-align: center; color: var(--muted); margin: 80px auto 0;
     max-width: 520px;
   }
   .empty h2 { color: var(--text); margin-bottom: 12px; }
@@ -124,6 +126,50 @@
     display: none; font-size: 13px; line-height: 1.5;
   }
   .notice-banner.show { display: block; }
+  .chat {
+    width: 360px; flex: none; display: flex; flex-direction: column;
+    background: var(--panel); border-left: 1px solid var(--border);
+  }
+  .chat[hidden] { display: none; }
+  .chat-head {
+    display: flex; align-items: baseline; gap: 8px; padding: 12px 14px;
+    border-bottom: 1px solid var(--border); font-size: 14px;
+  }
+  .chat-key-status { margin-left: auto; color: var(--muted); font-size: 12px; }
+  .chat-key-status a { color: var(--accent); cursor: pointer; }
+  .chat-key {
+    display: flex; flex-direction: column; gap: 8px; padding: 12px 14px;
+    border-bottom: 1px solid var(--border); font-size: 13px;
+  }
+  .chat-key[hidden] { display: none; }
+  .chat-key input[type="password"] {
+    background: var(--bg); color: var(--text); border: 1px solid var(--border);
+    border-radius: 6px; padding: 8px 10px; font: inherit;
+  }
+  .chat-key p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+  .chat-remember { color: var(--muted); display: flex; align-items: center; gap: 6px; }
+  .chat-key-actions { display: flex; gap: 6px; }
+  .chat-log {
+    flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px;
+    font-size: 13px; line-height: 1.5;
+  }
+  .msg { max-width: 92%; padding: 8px 11px; border-radius: 10px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .msg.user { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 3px; }
+  .msg.bot { align-self: flex-start; background: #222733; border: 1px solid var(--border); border-bottom-left-radius: 3px; }
+  .msg.bot.error { background: #3a1a1a; border-color: #6b2a2a; color: #ffb4b4; }
+  .msg.bot.pending { color: var(--muted); font-style: italic; }
+  .msg .msg-actions { margin-top: 6px; }
+  .chat-form { display: flex; gap: 8px; padding: 12px 14px; border-top: 1px solid var(--border); align-items: flex-end; }
+  .chat-form textarea {
+    flex: 1; resize: none; background: var(--bg); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px;
+    font: inherit; font-size: 14px; line-height: 1.4; max-height: 140px;
+  }
+  .chat-form textarea:focus, .chat-key input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  @media (max-width: 900px) {
+    .workspace { flex-direction: column; }
+    .chat { width: auto; height: 45vh; border-left: 0; border-top: 1px solid var(--border); }
+  }
   .notice-banner div + div { margin-top: 6px; }
   button.small { padding: 3px 9px; font-size: 12px; margin-left: 4px; }
 </style>
@@ -135,12 +181,14 @@
   <input type="file" id="file-input" accept="application/pdf,.pdf" />
   <button id="save-btn" disabled>Save as PDF</button>
   <button id="reset-btn" class="secondary" disabled>Reset Edits</button>
+  <button id="chat-toggle" class="secondary" aria-pressed="true">Assistant</button>
   <span class="info" id="status">No file loaded</span>
 </header>
 
 <div class="error-banner" id="error-banner"></div>
 <div class="notice-banner" id="notice-banner"></div>
 
+<div class="workspace">
 <main id="main">
   <div class="empty" id="empty-state">
     <h2>Edit text inside any PDF</h2>
@@ -155,6 +203,29 @@
     </p>
   </div>
 </main>
+
+<aside class="chat" id="chat" aria-label="Assistant">
+  <div class="chat-head">
+    <strong>Assistant</strong>
+    <span class="chat-key-status" id="chat-key-status"></span>
+  </div>
+  <form class="chat-key" id="chat-key-form" hidden>
+    <label for="chat-key-input">Anthropic API key</label>
+    <input id="chat-key-input" type="password" autocomplete="off" spellcheck="false" placeholder="sk-ant-…" />
+    <label class="chat-remember"><input type="checkbox" id="chat-key-remember" /> Remember on this device</label>
+    <div class="chat-key-actions">
+      <button type="submit" class="small">Save key</button>
+      <button type="button" class="secondary small" id="chat-key-cancel">Cancel</button>
+    </div>
+    <p>The key stays in this browser and is sent only to Anthropic's API. Without one, I can still follow simple instructions like <em>change “2,295.00” to “2,395.00”</em>.</p>
+  </form>
+  <div class="chat-log" id="chat-log" aria-live="polite"></div>
+  <form class="chat-form" id="chat-form">
+    <textarea id="chat-input" rows="2" placeholder="Open a PDF, then tell me what to change…" disabled></textarea>
+    <button type="submit" id="chat-send" disabled>Send</button>
+  </form>
+</aside>
+</div>
 
 <div class="loading" id="loading"><div class="spinner" id="loading-text">Loading…</div></div>
 
@@ -1429,6 +1500,7 @@
     main.innerHTML = "";
     S.pages = [];
     for (let i = 0; i < pdf.numPages; i++) S.pages.push(await setupPage(await pdf.getPage(i + 1), i));
+    resetChat();
   }
 
   async function setupPage(page, i) {
@@ -1778,23 +1850,25 @@
     const seq = ++S.seq;
     const sigs = S.pages.map((P) => pageSig(P, hiddenKey));
     const dirty = S.pages.filter((P, i) => P.sig !== sigs[i]);
-    if (!dirty.length) return;
+    if (!dirty.length) return [];
     try {
       const { bytes, warnings } = await build(hiddenKey);
       if (!hiddenKey && seq === S.seq) showNotice(warnings);
-      if (seq !== S.seq) return;
+      if (seq !== S.seq) return warnings;
       const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
       for (const P of dirty) {
         if (seq !== S.seq) break;
         await paint(P, await pdf.getPage(P.index + 1));
         P.sig = sigs[P.index];
       }
-      if (seq !== S.seq) { pdf.destroy(); return; }
+      if (seq !== S.seq) { pdf.destroy(); return warnings; }
       if (S.pdf) S.pdf.destroy();
       S.pdf = pdf;
+      return warnings;
     } catch (err) {
       console.error(err);
       showError("Failed to apply edit: " + (err.message || err));
+      return [];
     }
   }
 
@@ -1925,6 +1999,341 @@
     node.set(PDFName.of("Contents"), ctx.obj([qRef, ...parts, QRef, oRef]));
     S.overlays.set(i, oRef);
     return oRef;
+  }
+
+  /* =========================== assistant =========================== */
+  // Type changes instead of clicking. With an Anthropic API key, Claude reads
+  // the page's text and edits it through the same in-place engine; without
+  // one, simple "change X to Y" instructions are handled locally.
+  const SDK_URL = "https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@0.131.0/+esm";
+  const MODEL = "claude-opus-5-5";
+  const KEY_STORE = "pdfEditor.anthropicApiKey";
+  const chatPanel = document.getElementById("chat");
+  const chatLog = document.getElementById("chat-log");
+  const chatForm = document.getElementById("chat-form");
+  const chatInput = document.getElementById("chat-input");
+  const chatSend = document.getElementById("chat-send");
+  const chatToggle = document.getElementById("chat-toggle");
+  const keyForm = document.getElementById("chat-key-form");
+  const keyInput = document.getElementById("chat-key-input");
+  const keyRemember = document.getElementById("chat-key-remember");
+  const keyStatus = document.getElementById("chat-key-status");
+
+  const SYSTEM = `You are the assistant inside a browser-based PDF text editor. The user has opened a PDF (usually an invoice or receipt) and tells you in plain language what text to change. You change text with the edit_text tool; the editor rewrites it in place in the PDF's original font, weight, size and colour.
+
+Every piece of text on the pages is listed in the document below as an item: its id, page, position in points from the top-left corner, width, size, style, colour, how it is aligned, and its original text. Each user message starts with an <editor_state> block giving the current text of any item already edited, by you or by the user clicking on the page.
+
+- Change only what the user asks for. Match the format of the text you replace: currency symbol, thousands separators, decimal places, date style, capitalisation and spacing.
+- Each edit gives an item's complete new text, not only the changed part.
+- When the user asks you to recalculate (for example "update the totals"), work the arithmetic out from the figures on the page and edit every figure that depends on the change. When they don't ask, leave other figures alone, but say which ones no longer add up.
+- If a request could mean several items and it isn't clear whether they mean all of them, ask a short question instead of guessing.
+- Leave align as "auto" (keeps the original alignment) unless the user asks for an alignment.
+- To undo an edit, set the item back to its original text.
+- After editing, reply in one or two short sentences saying what changed. If the editor reports that characters were drawn with a substitute font, mention it briefly.`;
+
+  const TOOLS = [{
+    name: "edit_text",
+    description: "Replace the text of one or more items in the PDF. Each edit sets an item's complete new text; the editor keeps the item's original font, size, colour and position. Returns what was applied and any notes from the editor.",
+    strict: true,
+    input_schema: {
+      type: "object",
+      properties: {
+        edits: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              id: { type: "string", description: "Item id from the document list, e.g. i12." },
+              new_text: { type: "string", description: "The item's complete new text." },
+              align: {
+                type: "string", enum: ["auto", "left", "center", "right"],
+                description: "Which way longer or shorter text grows. \"auto\" keeps the item's original alignment.",
+              },
+            },
+            required: ["id", "new_text", "align"],
+            additionalProperties: false,
+          },
+        },
+      },
+      required: ["edits"],
+      additionalProperties: false,
+    },
+  }];
+
+  const C = { key: "", remember: false, history: [], snapshot: null, busy: false, sdk: null, client: null };
+  try { C.key = localStorage.getItem(KEY_STORE) || ""; C.remember = !!C.key; } catch (e) { /* storage blocked */ }
+
+  function renderKeyStatus() {
+    keyStatus.textContent = "";
+    const a = document.createElement("a");
+    if (C.key) {
+      keyStatus.append("Claude · ");
+      a.textContent = "API key";
+    } else {
+      keyStatus.append("Simple commands · ");
+      a.textContent = "Add API key";
+    }
+    a.addEventListener("click", () => { keyForm.hidden = !keyForm.hidden; if (!keyForm.hidden) keyInput.focus(); });
+    keyStatus.append(a);
+  }
+  keyForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    C.key = keyInput.value.trim();
+    C.remember = keyRemember.checked;
+    C.client = null;
+    try {
+      if (C.key && C.remember) localStorage.setItem(KEY_STORE, C.key);
+      else localStorage.removeItem(KEY_STORE);
+    } catch (err) { /* storage blocked */ }
+    keyInput.value = "";
+    keyForm.hidden = true;
+    renderKeyStatus();
+    botSay(C.key ? "Key saved. Tell me what to change." : "Key removed. I'll handle simple “change X to Y” instructions.");
+  });
+  document.getElementById("chat-key-cancel").addEventListener("click", () => { keyForm.hidden = true; keyInput.value = ""; });
+  keyRemember.checked = C.remember;
+  renderKeyStatus();
+
+  chatToggle.addEventListener("click", () => {
+    chatPanel.hidden = !chatPanel.hidden;
+    chatToggle.setAttribute("aria-pressed", String(!chatPanel.hidden));
+  });
+  chatInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); chatForm.requestSubmit(); }
+  });
+  chatForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const text = chatInput.value.trim();
+    if (!text || C.busy || !S.doc) return;
+    chatInput.value = "";
+    say("user", text);
+    handleChat(text);
+  });
+
+  function say(role, text, cls) {
+    const m = document.createElement("div");
+    m.className = "msg " + role + (cls ? " " + cls : "");
+    m.textContent = text;
+    chatLog.appendChild(m);
+    chatLog.scrollTop = chatLog.scrollHeight;
+    return m;
+  }
+  function botSay(text, cls) { return say("bot", text, cls); }
+  function setBusy(b) {
+    C.busy = b;
+    chatSend.disabled = b || !S.doc;
+    chatInput.disabled = !S.doc;
+  }
+
+  // Called whenever a new PDF is opened.
+  function resetChat() {
+    C.history = [];
+    C.snapshot = null;
+    chatLog.textContent = "";
+    chatInput.disabled = false;
+    chatInput.placeholder = "e.g. change the invoice number to INV-2026-0418";
+    setBusy(false);
+    botSay(C.key
+      ? "Tell me what to change — for example “change the date to October 22, 2026” or “set the hours to 10 and update the totals”."
+      : "Tell me what to change, like: change “2,295.00” to “2,395.00”. Add an Anthropic API key (top of this panel) to describe changes in your own words.");
+  }
+
+  /* ----- applying edits (shared by both modes) ----- */
+  function editable() { return [...S.items.values()].filter((t) => t.span); }
+  function currentText(t) { const e = currentEdit(t); return e ? e.text : t.text; }
+  function snapshotEdit(t) { const e = currentEdit(t); return e ? { ...e } : null; }
+  function applyText(t, text, align) {
+    text = text.replace(/[\r\n]+/g, " ");
+    t.span.textContent = text;
+    commit(t, text, align || "auto");
+  }
+  function addUndo(msg, before) {
+    if (!before.size) return;
+    const wrap = document.createElement("div");
+    wrap.className = "msg-actions";
+    const b = document.createElement("button");
+    b.className = "secondary small";
+    b.textContent = "Undo";
+    b.addEventListener("click", async () => {
+      b.disabled = true;
+      for (const [t, prev] of before) applyText(t, prev ? prev.text : t.text, prev ? prev.align : "auto");
+      await refresh(null);
+      b.textContent = "Undone";
+    });
+    wrap.appendChild(b);
+    msg.appendChild(wrap);
+  }
+  // Notes about the items just changed (the build reports the whole document).
+  function warningNotes(warnings, items) {
+    const notes = new Set();
+    for (const w of warnings) {
+      if (w.patch) {
+        if (items.some((t) => t.kind === "p")) notes.add("Scanned text was replaced with a background-coloured patch and a standard font.");
+        continue;
+      }
+      if (!items.some((t) => t.kind === "g" && t.font.base === w.font && currentText(t).includes(w.ch))) continue;
+      if (w.used) notes.add(`“${w.ch}” isn't embedded in the PDF's ${w.font} font, so it was drawn with ${w.used}.`);
+      else notes.add(`“${w.ch}” can't be drawn with the PDF's ${w.font} font and was left out.`);
+    }
+    return [...notes];
+  }
+
+  async function handleChat(text) {
+    setBusy(true);
+    try {
+      if (C.key) await askClaude(text);
+      else await localCommand(text);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /* ----- simple commands without an API key ----- */
+  async function localCommand(text) {
+    const m = /^\s*(?:please\s+)?(?:change|replace|set|update|make)\s+(.+?)\s+(?:to|with|into|->|→|=>)\s+(.+?)\s*$/is.exec(text) ||
+      /^\s*(.+?)\s*(?:->|→|=>)\s*(.+?)\s*$/s.exec(text);
+    if (!m) {
+      botSay("Without an API key I can only follow instructions like: change “Old text” to “New text”. Add your Anthropic API key at the top of this panel to describe changes in your own words.");
+      return;
+    }
+    const unquote = (v) => v.replace(/^["“”'‘’]+|["“”'‘’]+$/g, "");
+    const quoted = /^["“'‘].*["”'’]$/.test(m[2].trim());
+    const find = unquote(m[1].trim());
+    let repl = unquote(m[2].trim());
+    if (!quoted && repl.endsWith(".") && !find.endsWith(".")) repl = repl.slice(0, -1);
+    if (!find) { botSay("Tell me which text to change."); return; }
+    const items = editable();
+    let hits = items.filter((t) => currentText(t) === find);
+    if (!hits.length) hits = items.filter((t) => currentText(t).includes(find));
+    const ci = !hits.length;
+    if (ci) hits = items.filter((t) => currentText(t).toLowerCase().includes(find.toLowerCase()));
+    if (!hits.length) { botSay(`I couldn't find “${find}” on the page.`); return; }
+    const before = new Map();
+    for (const t of hits) {
+      before.set(t, snapshotEdit(t));
+      const cur = currentText(t);
+      const next = cur === find ? repl : ci
+        ? cur.replace(new RegExp(find.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi"), () => repl)
+        : cur.split(find).join(repl);
+      applyText(t, next, (currentEdit(t) || {}).align);
+    }
+    const warnings = await refresh(null);
+    const where = hits.map((t) => `page ${t.page + 1}`);
+    const msg = botSay(hits.length === 1
+      ? `Changed “${find}” to “${repl}” (${where[0]}).`
+      : `Changed “${find}” to “${repl}” in ${hits.length} places (${[...new Set(where)].join(", ")}).`);
+    const notes = warningNotes(warnings || [], hits);
+    if (notes.length) msg.append("\n" + notes.join(" "));
+    addUndo(msg, before);
+  }
+
+  /* ----- Claude ----- */
+  function documentSnapshot() {
+    const k = RENDER_SCALE;
+    const items = editable().sort((a, b) => a.page - b.page || a.geo.box.y0 - b.geo.box.y0 || a.geo.box.x0 - b.geo.box.x0);
+    const lines = items.map((t) => {
+      const b = t.geo.box, st = [];
+      if (t.style.bold) st.push("bold");
+      if (t.style.italic) st.push("italic");
+      if (t.kind === "g" && t.fill) st.push("color #" + t.fill.map((v) => Math.round(Math.min(1, Math.max(0, v)) * 255).toString(16).padStart(2, "0")).join(""));
+      if (t.kind === "p") st.push("scanned");
+      return `${t.id} p${t.page + 1} x=${Math.round(b.x0 / k)} y=${Math.round(b.y0 / k)} w=${Math.round((b.x1 - b.x0) / k)} ` +
+        `${Math.round((t.geo.fontPx / k) * 10) / 10}pt ${st.join(" ")} align=${t.autoAlign}: ${JSON.stringify(t.text)}`;
+    });
+    return `<document name=${JSON.stringify(S.name || "document.pdf")} pages="${S.pages.length}">\n${lines.join("\n")}\n</document>`;
+  }
+  function editorState() {
+    const lines = [];
+    for (const t of editable()) {
+      const e = currentEdit(t);
+      if (e) lines.push(`${t.id}: ${JSON.stringify(e.text)} (original ${JSON.stringify(t.text)})`);
+    }
+    return "<editor_state>\n" + (lines.length ? "Edited so far:\n" + lines.join("\n") : "No edits yet.") + "\n</editor_state>";
+  }
+
+  async function runEditTool(input, before) {
+    const edits = input && Array.isArray(input.edits) ? input.edits : null;
+    if (!edits) return { content: "Invalid input: expected {edits: [...]}.", is_error: true };
+    const applied = [], errors = [];
+    for (const e of edits) {
+      const t = e && S.items.get(String(e.id));
+      if (!t || !t.span) { errors.push(`${e && e.id}: no item with that id`); continue; }
+      if (typeof e.new_text !== "string") { errors.push(`${t.id}: new_text must be a string`); continue; }
+      if (!before.has(t)) before.set(t, snapshotEdit(t));
+      const align = ["left", "center", "right"].includes(e.align) ? e.align : "auto";
+      applyText(t, e.new_text, align);
+      applied.push({ id: t.id, text: currentText(t) });
+    }
+    const warnings = applied.length ? await refresh(null) : [];
+    const result = { applied, errors, notes: warningNotes(warnings || [], applied.map((a) => S.items.get(a.id))) };
+    return { content: JSON.stringify(result), is_error: !applied.length && errors.length > 0 };
+  }
+
+  async function getClient() {
+    if (!C.sdk) C.sdk = (await import(SDK_URL)).default;
+    if (!C.client) C.client = new C.sdk({ apiKey: C.key, dangerouslyAllowBrowser: true });
+    return C.client;
+  }
+
+  async function askClaude(text) {
+    const pending = botSay("Working on it…", "pending");
+    const before = new Map();
+    let lastMsg = null;
+    try {
+      const client = await getClient();
+      if (!C.snapshot) C.snapshot = documentSnapshot();
+      C.history.push({ role: "user", content: [{ type: "text", text: editorState() }, { type: "text", text }] });
+      for (let turn = 0; turn < 8; turn++) {
+        const response = await client.beta.messages.create({
+          model: MODEL,
+          max_tokens: 16000,
+          betas: ["server-side-fallback-2026-07-01"],
+          fallbacks: "default",
+          output_config: { effort: "medium" },
+          cache_control: { type: "ephemeral" },
+          system: [{ type: "text", text: SYSTEM }, { type: "text", text: C.snapshot }],
+          tools: TOOLS,
+          messages: C.history,
+        });
+        // Keep the whole assistant turn (thinking and fallback blocks included).
+        C.history.push({ role: "assistant", content: response.content });
+        if (response.stop_reason === "refusal") {
+          lastMsg = botSay("Claude declined this request.", "error");
+          break;
+        }
+        const said = response.content.filter((b) => b.type === "text").map((b) => b.text).join("\n").trim();
+        if (said) lastMsg = botSay(said);
+        if (response.stop_reason === "pause_turn") continue;
+        if (response.stop_reason !== "tool_use") {
+          if (response.stop_reason === "max_tokens") lastMsg = botSay("That reply was cut off — try a smaller request.", "error");
+          break;
+        }
+        const results = [];
+        for (const b of response.content) {
+          if (b.type !== "tool_use") continue;
+          if (b.name !== "edit_text") { results.push({ type: "tool_result", tool_use_id: b.id, content: "Unknown tool.", is_error: true }); continue; }
+          const r = await runEditTool(b.input, before);
+          results.push({ type: "tool_result", tool_use_id: b.id, content: r.content, is_error: r.is_error });
+        }
+        C.history.push({ role: "user", content: results });
+      }
+      if (!lastMsg) lastMsg = botSay(before.size ? "Done." : "I didn't change anything.");
+      addUndo(lastMsg, before);
+    } catch (err) {
+      console.error(err);
+      const A = C.sdk;
+      let msg;
+      if (A && err instanceof A.AuthenticationError) { msg = "Anthropic rejected that API key. Add a valid key at the top of this panel."; C.client = null; keyForm.hidden = false; }
+      else if (A && err instanceof A.PermissionDeniedError) msg = "This API key isn't allowed to use " + MODEL + ".";
+      else if (A && err instanceof A.RateLimitError) msg = "Too many requests right now — wait a moment and try again.";
+      else if (A && err instanceof A.APIConnectionError) msg = "Couldn't reach the Anthropic API. Check your connection and try again.";
+      else if (A && err instanceof A.APIError) msg = `The Anthropic API returned an error (${err.status}): ${err.message}`;
+      else msg = "Something went wrong: " + (err.message || err);
+      lastMsg = botSay(msg, "error");
+      addUndo(lastMsg, before);
+    } finally {
+      pending.remove();
+    }
   }
 
   resetBtn.addEventListener("click", () => {
