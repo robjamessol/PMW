@@ -45,6 +45,7 @@
   .page-wrap {
     position: relative; background: white;
     box-shadow: 0 4px 20px rgba(0,0,0,.4);
+    flex: none;
   }
   canvas { display: block; }
   .text-layer {
@@ -53,27 +54,44 @@
   }
   .text-item {
     position: absolute;
+    left: 0; top: 0;
+    display: inline-block;
     white-space: pre;
     cursor: text;
     pointer-events: auto;
     user-select: text;
     padding: 0; margin: 0;
     outline: none;
-    line-height: 1;
     color: transparent;
     background: transparent;
+    transform-origin: 0 0;
+    border-radius: 1px;
   }
   .text-item:hover {
     background: rgba(79, 140, 255, 0.15);
   }
-  .text-item:focus,
-  .text-item.edited {
-    color: #000;
-    background: #fff;
+  .text-item.edited:not(.editing) {
+    outline: 1px dashed rgba(79, 140, 255, 0.7);
   }
-  .text-item:focus {
+  .text-item.editing {
     box-shadow: 0 0 0 2px var(--accent);
   }
+  .edit-bar {
+    position: absolute; z-index: 5;
+    display: flex; align-items: center; gap: 4px;
+    padding: 4px; border-radius: 8px;
+    background: var(--panel); border: 1px solid var(--border);
+    box-shadow: 0 4px 14px rgba(0,0,0,.35);
+    color: var(--muted); font-size: 12px; white-space: nowrap;
+    pointer-events: auto;
+  }
+  .edit-bar span { padding: 0 4px 0 6px; }
+  .edit-bar button {
+    background: #2a2f3a; padding: 4px 9px; font-size: 12px; border-radius: 5px;
+  }
+  .edit-bar button:hover { background: #353b48; }
+  .edit-bar button.on { background: var(--accent); }
+  .edit-bar .sep { width: 1px; align-self: stretch; background: var(--border); margin: 0 2px; padding: 0; }
   .empty {
     text-align: center; color: var(--muted); margin-top: 80px;
     max-width: 520px;
@@ -100,6 +118,14 @@
     display: none; font-size: 13px;
   }
   .error-banner.show { display: block; }
+  .notice-banner {
+    background: #2f2a16; color: #f3dc8b; padding: 8px 14px;
+    border: 1px solid #5c4f1f; border-radius: 6px; margin: 10px 20px 0;
+    display: none; font-size: 13px; line-height: 1.5;
+  }
+  .notice-banner.show { display: block; }
+  .notice-banner div + div { margin-top: 6px; }
+  button.small { padding: 3px 9px; font-size: 12px; margin-left: 4px; }
 </style>
 </head>
 <body>
@@ -113,13 +139,15 @@
 </header>
 
 <div class="error-banner" id="error-banner"></div>
+<div class="notice-banner" id="notice-banner"></div>
 
 <main id="main">
   <div class="empty" id="empty-state">
     <h2>Edit text inside any PDF</h2>
     <p>
       Click <strong>Open PDF</strong> to load a file. Click any word on the page
-      and start typing — the text updates in place. When you're done, press
+      and start typing — the text updates in place, keeping its original font,
+      weight, size, colour and background. When you're done, press
       <kbd>Save as PDF</kbd> to download.
     </p>
     <p style="margin-top:16px; font-size:12px;">
@@ -133,7 +161,1179 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 <script>
+  /*
+   * Text engine.
+   *
+   * Edits are made by rewriting the text-showing operators (Tj / TJ / ' / ")
+   * inside the page's own content stream, so the replacement text is drawn
+   * with the same font, size, colour, spacing and position as the original
+   * and nothing is painted over the page. Characters the embedded font
+   * subset does not contain are taken from another subset of the same font
+   * in the file, or failing that from the closest standard PDF font.
+   */
+  const PdfTextEngine = (() => {
+    const {
+      PDFName, PDFDict, PDFArray, PDFRef, PDFNumber, PDFRawStream,
+      PDFString, PDFHexString, StandardFontEmbedder, decodePDFRawStream,
+    } = PDFLib;
+
+    /* ---------- matrices: [a b c d e f], row-vector convention ---------- */
+    const ID = [1, 0, 0, 1, 0, 0];
+    const mul = (m, n) => [
+      m[0] * n[0] + m[1] * n[2], m[0] * n[1] + m[1] * n[3],
+      m[2] * n[0] + m[3] * n[2], m[2] * n[1] + m[3] * n[3],
+      m[4] * n[0] + m[5] * n[2] + n[4], m[4] * n[1] + m[5] * n[3] + n[5],
+    ];
+    const pt = (m, x, y) => [x * m[0] + y * m[2] + m[4], x * m[1] + y * m[3] + m[5]];
+    const vec = (m, x, y) => [x * m[0] + y * m[2], x * m[1] + y * m[3]];
+    const unit = (v) => { const l = Math.hypot(v[0], v[1]) || 1; return [v[0] / l, v[1] / l]; };
+    const num = (v, d = 0) => (typeof v === "number" && isFinite(v) ? v : d);
+
+    function fmt(n) {
+      if (!isFinite(n) || Math.abs(n) < 5e-5) return "0";
+      let s = n.toFixed(4);
+      if (s.indexOf(".") >= 0) s = s.replace(/0+$/, "").replace(/\.$/, "");
+      return s === "-0" ? "0" : s;
+    }
+    // Font sizes are written back exactly as read, not rounded.
+    const fmtSize = (n) => (Math.abs(n) >= 1e-4 ? String(+n.toPrecision(12)) : fmt(n));
+    function hexOf(bytes) {
+      let s = "<";
+      for (const b of bytes) s += (b < 16 ? "0" : "") + b.toString(16);
+      return s + ">";
+    }
+    function escName(n) {
+      return n.replace(/[^!-~]|[#()<>\[\]{}\/%]/g, (c) => "#" + c.charCodeAt(0).toString(16).padStart(2, "0"));
+    }
+
+    /* ---------- content stream lexer ---------- */
+    const WS = new Uint8Array(256);
+    [0, 9, 10, 12, 13, 32].forEach((c) => (WS[c] = 1));
+    const DL = new Uint8Array(256);
+    "()<>[]{}/%".split("").forEach((c) => (DL[c.charCodeAt(0)] = 1));
+    const hexVal = (c) => (c >= 48 && c <= 57 ? c - 48 : c >= 65 && c <= 70 ? c - 55 : c >= 97 && c <= 102 ? c - 87 : -1);
+
+    class Lexer {
+      constructor(b) { this.b = b; this.p = 0; }
+      next() {
+        const b = this.b;
+        for (;;) {
+          while (this.p < b.length && WS[b[this.p]]) this.p++;
+          if (b[this.p] !== 37) break;
+          while (this.p < b.length && b[this.p] !== 10 && b[this.p] !== 13) this.p++;
+        }
+        const s = this.p;
+        if (s >= b.length) return null;
+        const c = b[s];
+        if (c === 40) return { t: "str", v: this.lit(), s, e: this.p };
+        if (c === 60) {
+          if (b[s + 1] === 60) { this.p += 2; return { t: "<<", s, e: this.p }; }
+          return { t: "str", v: this.hex(), s, e: this.p };
+        }
+        if (c === 62) { this.p += b[s + 1] === 62 ? 2 : 1; return { t: ">>", s, e: this.p }; }
+        if (c === 91 || c === 93 || c === 123 || c === 125) { this.p++; return { t: String.fromCharCode(c), s, e: this.p }; }
+        if (c === 47) {
+          this.p++;
+          const w = this.word().replace(/#([0-9a-fA-F]{2})/g, (_, h) => String.fromCharCode(parseInt(h, 16)));
+          return { t: "name", v: w, s, e: this.p };
+        }
+        const w = this.word();
+        if (!w) { this.p++; return { t: "junk", s, e: this.p }; }
+        if (/^[+-]*(\d+\.?\d*|\.\d+)$/.test(w)) {
+          const neg = /^[+-]*-/.test(w);
+          return { t: "num", v: (neg ? -1 : 1) * parseFloat(w.replace(/^[+-]+/, "")), s, e: this.p };
+        }
+        return { t: "op", v: w, s, e: this.p };
+      }
+      word() {
+        const b = this.b, s = this.p;
+        while (this.p < b.length && !WS[b[this.p]] && !DL[b[this.p]]) this.p++;
+        let r = "";
+        for (let i = s; i < this.p; i++) r += String.fromCharCode(b[i]);
+        return r;
+      }
+      lit() {
+        const b = this.b, out = [];
+        let p = this.p + 1, depth = 1;
+        while (p < b.length) {
+          let c = b[p++];
+          if (c === 92) {
+            c = b[p++];
+            if (c === 110) out.push(10);
+            else if (c === 114) out.push(13);
+            else if (c === 116) out.push(9);
+            else if (c === 98) out.push(8);
+            else if (c === 102) out.push(12);
+            else if (c === 13) { if (b[p] === 10) p++; }
+            else if (c === 10) { /* line continuation */ }
+            else if (c >= 48 && c <= 55) {
+              let v = c - 48;
+              for (let k = 0; k < 2 && b[p] >= 48 && b[p] <= 55; k++) v = v * 8 + (b[p++] - 48);
+              out.push(v & 255);
+            } else if (c !== undefined) out.push(c);
+          } else if (c === 40) { depth++; out.push(c); }
+          else if (c === 41) { if (--depth === 0) break; out.push(c); }
+          else if (c === 13) { out.push(10); if (b[p] === 10) p++; }
+          else out.push(c);
+        }
+        this.p = p;
+        return Uint8Array.from(out);
+      }
+      hex() {
+        const b = this.b, out = [];
+        let p = this.p + 1, hi = -1;
+        while (p < b.length && b[p] !== 62) {
+          const d = hexVal(b[p++]);
+          if (d < 0) continue;
+          if (hi < 0) hi = d; else { out.push(hi * 16 + d); hi = -1; }
+        }
+        if (hi >= 0) out.push(hi * 16);
+        this.p = p + 1;
+        return Uint8Array.from(out);
+      }
+    }
+
+    // Parse a content stream into operators, remembering the byte range
+    // [s, e) each one occupies (operands included) so it can be replaced.
+    function parseContent(bytes) {
+      const lx = new Lexer(bytes), ops = [], nest = [];
+      let stack = [], start = -1;
+      for (let tk; (tk = lx.next()); ) {
+        if (start < 0) start = tk.s;
+        let val;
+        switch (tk.t) {
+          case "num": val = tk.v; break;
+          case "str": val = { str: tk.v }; break;
+          case "name": val = { name: tk.v }; break;
+          case "[": nest.push([]); continue;
+          case "<<": nest.push({ dict: [] }); continue;
+          case "]": { const a = nest.pop(); val = Array.isArray(a) ? a : []; break; }
+          case ">>": { const d = nest.pop(); val = d && d.dict ? d : { dict: [] }; break; }
+          case "op":
+            if (tk.v === "true" || tk.v === "false" || tk.v === "null") { val = tk.v === "true" ? true : tk.v === "false" ? false : null; break; }
+            if (nest.length) { val = { kw: tk.v }; break; }
+            if (tk.v === "BI") {
+              skipInlineImage(bytes, lx);
+              ops.push({ op: "BI", args: [], s: start, e: lx.p });
+            } else {
+              ops.push({ op: tk.v, args: stack, s: start, e: tk.e });
+            }
+            stack = [];
+            start = -1;
+            continue;
+          default: continue;
+        }
+        if (nest.length) { const top = nest[nest.length - 1]; (Array.isArray(top) ? top : top.dict).push(val); }
+        else stack.push(val);
+      }
+      return ops;
+    }
+    function skipInlineImage(b, lx) {
+      for (let tk; (tk = lx.next()); ) if (tk.t === "op" && tk.v === "ID") break;
+      for (let p = lx.p + 1; p < b.length - 1; p++) {
+        if (b[p] === 69 && b[p + 1] === 73 && WS[b[p - 1]] && (p + 2 >= b.length || WS[b[p + 2]] || DL[b[p + 2]])) {
+          lx.p = p + 2;
+          return;
+        }
+      }
+      lx.p = b.length;
+    }
+
+    /* ---------- glyph names and simple-font encodings ---------- */
+    const GLYPHS = (() => {
+      const m = Object.create(null);
+      ("space exclam quotedbl numbersign dollar percent ampersand quotesingle parenleft parenright asterisk plus " +
+        "comma hyphen period slash zero one two three four five six seven eight nine colon semicolon less equal " +
+        "greater question at").split(" ").forEach((n, i) => (m[n] = 0x20 + i));
+      for (let i = 0; i < 26; i++) { m[String.fromCharCode(65 + i)] = 65 + i; m[String.fromCharCode(97 + i)] = 97 + i; }
+      "bracketleft backslash bracketright asciicircum underscore grave".split(" ").forEach((n, i) => (m[n] = 0x5b + i));
+      "braceleft bar braceright asciitilde".split(" ").forEach((n, i) => (m[n] = 0x7b + i));
+      ("nbspace exclamdown cent sterling currency yen brokenbar section dieresis copyright ordfeminine " +
+        "guillemotleft logicalnot sfthyphen registered macron degree plusminus twosuperior threesuperior acute mu " +
+        "paragraph periodcentered cedilla onesuperior ordmasculine guillemotright onequarter onehalf threequarters " +
+        "questiondown Agrave Aacute Acircumflex Atilde Adieresis Aring AE Ccedilla Egrave Eacute Ecircumflex " +
+        "Edieresis Igrave Iacute Icircumflex Idieresis Eth Ntilde Ograve Oacute Ocircumflex Otilde Odieresis " +
+        "multiply Oslash Ugrave Uacute Ucircumflex Udieresis Yacute Thorn germandbls agrave aacute acircumflex " +
+        "atilde adieresis aring ae ccedilla egrave eacute ecircumflex edieresis igrave iacute icircumflex " +
+        "idieresis eth ntilde ograve oacute ocircumflex otilde odieresis divide oslash ugrave uacute ucircumflex " +
+        "udieresis yacute thorn ydieresis").split(" ").forEach((n, i) => (m[n] = 0xa0 + i));
+      Object.assign(m, {
+        Euro: 0x20ac, quotesinglbase: 0x201a, florin: 0x192, quotedblbase: 0x201e, ellipsis: 0x2026,
+        dagger: 0x2020, daggerdbl: 0x2021, circumflex: 0x2c6, perthousand: 0x2030, Scaron: 0x160,
+        guilsinglleft: 0x2039, OE: 0x152, Zcaron: 0x17d, quoteleft: 0x2018, quoteright: 0x2019,
+        quotedblleft: 0x201c, quotedblright: 0x201d, bullet: 0x2022, endash: 0x2013, emdash: 0x2014,
+        tilde: 0x2dc, trademark: 0x2122, scaron: 0x161, guilsinglright: 0x203a, oe: 0x153, zcaron: 0x17e,
+        Ydieresis: 0x178, fi: 0xfb01, fl: 0xfb02, fraction: 0x2044, dotlessi: 0x131, ring: 0x2da,
+        hungarumlaut: 0x2dd, ogonek: 0x2db, caron: 0x2c7, breve: 0x2d8, dotaccent: 0x2d9, Lslash: 0x141,
+        lslash: 0x142, minus: 0x2212, middot: 0xb7, overscore: 0xaf, nonbreakingspace: 0xa0,
+      });
+      return m;
+    })();
+    const NAME_OF = (() => {
+      const r = Object.create(null);
+      for (const n in GLYPHS) { const ch = String.fromCodePoint(GLYPHS[n]); if (!(ch in r)) r[ch] = n; }
+      r[" "] = "space"; r["-"] = "hyphen";
+      return r;
+    })();
+    function glyphUni(n) {
+      if (!n || n === ".notdef") return "";
+      if (n in GLYPHS) return String.fromCodePoint(GLYPHS[n]);
+      if (/^uni([0-9A-Fa-f]{4})+$/.test(n)) {
+        let s = "";
+        for (let i = 3; i + 4 <= n.length; i += 4) s += String.fromCharCode(parseInt(n.substr(i, 4), 16));
+        return s;
+      }
+      const m = /^u([0-9A-Fa-f]{4,6})$/.exec(n);
+      if (m) return String.fromCodePoint(parseInt(m[1], 16));
+      const base = n.split(".")[0];
+      if (base !== n) return glyphUni(base);
+      if (n.indexOf("_") > 0) return n.split("_").map(glyphUni).join("");
+      return "";
+    }
+    function decodeTable(label) {
+      const t = new Array(256).fill(null);
+      try {
+        const d = new TextDecoder(label);
+        for (let c = 32; c < 256; c++) { if (c === 127) continue; const s = d.decode(Uint8Array.of(c)); if (s && s !== "�") t[c] = s; }
+      } catch (e) { for (let c = 32; c < 127; c++) t[c] = String.fromCharCode(c); }
+      return t;
+    }
+    const WIN_ANSI = decodeTable("windows-1252");
+    const MAC_ROMAN = decodeTable("macintosh");
+    const STD_ENC = (() => {
+      const t = new Array(256).fill(null);
+      for (let c = 32; c < 127; c++) t[c] = String.fromCharCode(c);
+      t[0x27] = "’"; t[0x60] = "‘";
+      const hi = {
+        0xa1: "exclamdown", 0xa2: "cent", 0xa3: "sterling", 0xa4: "fraction", 0xa5: "yen", 0xa6: "florin",
+        0xa7: "section", 0xa8: "currency", 0xa9: "quotesingle", 0xaa: "quotedblleft", 0xab: "guillemotleft",
+        0xac: "guilsinglleft", 0xad: "guilsinglright", 0xae: "fi", 0xaf: "fl", 0xb1: "endash", 0xb2: "dagger",
+        0xb3: "daggerdbl", 0xb4: "periodcentered", 0xb6: "paragraph", 0xb7: "bullet", 0xb8: "quotesinglbase",
+        0xb9: "quotedblbase", 0xba: "quotedblright", 0xbb: "guillemotright", 0xbc: "ellipsis",
+        0xbd: "perthousand", 0xbf: "questiondown", 0xc1: "grave", 0xc2: "acute", 0xc3: "circumflex",
+        0xc4: "tilde", 0xc5: "macron", 0xc6: "breve", 0xc7: "dotaccent", 0xc8: "dieresis", 0xca: "ring",
+        0xcb: "cedilla", 0xcd: "hungarumlaut", 0xce: "ogonek", 0xcf: "caron", 0xd0: "emdash", 0xe1: "AE",
+        0xe3: "ordfeminine", 0xe8: "Lslash", 0xe9: "Oslash", 0xea: "OE", 0xeb: "ordmasculine", 0xf1: "ae",
+        0xf5: "dotlessi", 0xf8: "lslash", 0xf9: "oslash", 0xfa: "oe", 0xfb: "germandbls",
+      };
+      for (const c in hi) t[c] = glyphUni(hi[c]);
+      return t;
+    })();
+    const STD14 = [
+      "Courier", "Courier-Bold", "Courier-Oblique", "Courier-BoldOblique", "Helvetica", "Helvetica-Bold",
+      "Helvetica-Oblique", "Helvetica-BoldOblique", "Times-Roman", "Times-Bold", "Times-Italic",
+      "Times-BoldItalic", "Symbol", "ZapfDingbats",
+    ];
+    // Closest standard PDF font for a style.
+    function stdForStyle(s) {
+      const b = s.bold, i = s.italic;
+      if (s.mono) return b && i ? "Courier-BoldOblique" : b ? "Courier-Bold" : i ? "Courier-Oblique" : "Courier";
+      if (s.serif) return b && i ? "Times-BoldItalic" : b ? "Times-Bold" : i ? "Times-Italic" : "Times-Roman";
+      return b && i ? "Helvetica-BoldOblique" : b ? "Helvetica-Bold" : i ? "Helvetica-Oblique" : "Helvetica";
+    }
+
+    /* ---------- CMaps (ToUnicode and embedded encodings) ---------- */
+    const ckey = (len, code) => code * 8 + len;
+    function parseCMap(bytes) {
+      const lx = new Lexer(bytes), toks = [];
+      for (let t; (t = lx.next()); ) toks.push(t);
+      const res = { spaces: [], uni: new Map(), cid: new Map() };
+      const codeOf = (b) => { let c = 0; for (const x of b) c = c * 256 + x; return c; };
+      const utf16 = (b) => {
+        let s = "";
+        for (let i = 0; i + 1 < b.length; i += 2) s += String.fromCharCode((b[i] << 8) | b[i + 1]);
+        if (b.length % 2) s += String.fromCharCode(b[b.length - 1]);
+        return s;
+      };
+      const isStr = (t) => t && t.t === "str";
+      for (let i = 0; i < toks.length; i++) {
+        const t = toks[i];
+        if (t.t !== "op") continue;
+        if (t.v === "begincodespacerange") {
+          for (i++; isStr(toks[i]) && isStr(toks[i + 1]); i += 2)
+            res.spaces.push({ n: toks[i].v.length, lo: codeOf(toks[i].v), hi: codeOf(toks[i + 1].v) });
+        } else if (t.v === "beginbfchar") {
+          for (i++; isStr(toks[i]) && toks[i + 1]; i += 2) {
+            const src = toks[i].v, dst = toks[i + 1];
+            res.uni.set(ckey(src.length, codeOf(src)), dst.t === "str" ? utf16(dst.v) : glyphUni(dst.v));
+          }
+        } else if (t.v === "beginbfrange") {
+          for (i++; isStr(toks[i]) && isStr(toks[i + 1]) && toks[i + 2]; ) {
+            const n = toks[i].v.length, lo = codeOf(toks[i].v), hi = codeOf(toks[i + 1].v);
+            if (toks[i + 2].t === "[") {
+              let j = i + 3, c = lo;
+              for (; j < toks.length && toks[j].t !== "]"; j++, c++) if (isStr(toks[j]) && c <= hi) res.uni.set(ckey(n, c), utf16(toks[j].v));
+              i = j + 1;
+            } else {
+              const base = isStr(toks[i + 2]) ? utf16(toks[i + 2].v) : "";
+              if (base && hi - lo < 65536) {
+                const head = base.slice(0, -1), last = base.charCodeAt(base.length - 1);
+                for (let c = lo; c <= hi; c++) res.uni.set(ckey(n, c), head + String.fromCharCode(last + c - lo));
+              }
+              i += 3;
+            }
+          }
+          i--;
+        } else if (t.v === "begincidchar") {
+          for (i++; isStr(toks[i]) && toks[i + 1] && toks[i + 1].t === "num"; i += 2)
+            res.cid.set(ckey(toks[i].v.length, codeOf(toks[i].v)), toks[i + 1].v);
+        } else if (t.v === "begincidrange") {
+          for (i++; isStr(toks[i]) && isStr(toks[i + 1]) && toks[i + 2] && toks[i + 2].t === "num"; i += 3) {
+            const n = toks[i].v.length, lo = codeOf(toks[i].v), hi = codeOf(toks[i + 1].v);
+            if (hi - lo < 65536) for (let c = lo; c <= hi; c++) res.cid.set(ckey(n, c), toks[i + 2].v + c - lo);
+          }
+        }
+      }
+      return res;
+    }
+
+    /* ---------- TrueType: which glyphs does the embedded subset contain ---------- */
+    function parseTT(b) {
+      try {
+        const dv = new DataView(b.buffer, b.byteOffset, b.byteLength);
+        let off = 0;
+        if (dv.getUint32(0) === 0x74746366) off = dv.getUint32(12);
+        const n = dv.getUint16(off + 4), tab = {};
+        for (let i = 0; i < n; i++) {
+          const r = off + 12 + i * 16;
+          tab[String.fromCharCode(b[r], b[r + 1], b[r + 2], b[r + 3])] = { o: dv.getUint32(r + 8), l: dv.getUint32(r + 12) };
+        }
+        if (!tab.head || !tab.loca || !tab.maxp) return null;
+        const longLoca = dv.getInt16(tab.head.o + 50) === 1;
+        const numGlyphs = dv.getUint16(tab.maxp.o + 4);
+        const lo = tab.loca.o;
+        const loca = (i) => (longLoca ? dv.getUint32(lo + i * 4) : dv.getUint16(lo + i * 2) * 2);
+        const tt = { cmaps: {} };
+        tt.has = (g) => {
+          if (!(g > 0) || g >= numGlyphs) return false;
+          try { return loca(g + 1) > loca(g); } catch (e) { return true; }
+        };
+        if (tab.cmap) {
+          const co = tab.cmap.o, nt = dv.getUint16(co + 2);
+          for (let i = 0; i < nt; i++) {
+            const pid = dv.getUint16(co + 4 + i * 8), eid = dv.getUint16(co + 6 + i * 8);
+            const so = co + dv.getUint32(co + 8 + i * 8), fmtN = dv.getUint16(so);
+            let f = null;
+            if (fmtN === 0) f = (c) => (c < 256 ? b[so + 6 + c] : 0);
+            else if (fmtN === 6) {
+              const first = dv.getUint16(so + 6), cnt = dv.getUint16(so + 8);
+              f = (c) => (c >= first && c < first + cnt ? dv.getUint16(so + 10 + (c - first) * 2) : 0);
+            } else if (fmtN === 4) {
+              const segX2 = dv.getUint16(so + 6), endO = so + 14, startO = endO + segX2 + 2;
+              const deltaO = startO + segX2, rangeO = deltaO + segX2;
+              f = (c) => {
+                for (let s = 0; s < segX2 / 2; s++) {
+                  if (c > dv.getUint16(endO + s * 2)) continue;
+                  const st = dv.getUint16(startO + s * 2);
+                  if (c < st) return 0;
+                  const delta = dv.getInt16(deltaO + s * 2), ro = dv.getUint16(rangeO + s * 2);
+                  if (!ro) return (c + delta) & 0xffff;
+                  const g = dv.getUint16(rangeO + s * 2 + ro + (c - st) * 2);
+                  return g ? (g + delta) & 0xffff : 0;
+                }
+                return 0;
+              };
+            } else if (fmtN === 12) {
+              const ng = dv.getUint32(so + 12);
+              f = (c) => {
+                for (let k = 0; k < ng; k++) {
+                  const g = so + 16 + k * 12, s0 = dv.getUint32(g), s1 = dv.getUint32(g + 4);
+                  if (c >= s0 && c <= s1) return dv.getUint32(g + 8) + c - s0;
+                }
+                return 0;
+              };
+            }
+            if (f) tt.cmaps[pid + "," + eid] = tt.cmaps[pid + "," + eid] || f;
+          }
+        }
+        return tt;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    /* ---------- fonts ---------- */
+    class FontInfo {
+      constructor(eng, dict, ref) {
+        const g = (d, k) => eng.get(d, k);
+        this.eng = eng; this.dict = dict; this.ref = ref; this.id = ++eng.fontSeq;
+        const sub = eng.name(g(dict, "Subtype"));
+        this.type0 = sub === "Type0";
+        this.type3 = sub === "Type3";
+        this.baseFull = eng.name(g(dict, "BaseFont")) || "";
+        this.subset = /^[A-Z]{6}\+/.test(this.baseFull);
+        this.base = this.baseFull.replace(/^[A-Z]{6}\+/, "");
+        let cid = null;
+        if (this.type0) {
+          const df = g(dict, "DescendantFonts");
+          cid = df instanceof PDFArray ? eng.L(df.get(0)) : null;
+          if (!(cid instanceof PDFDict)) cid = null;
+        }
+        const fd = g(cid || dict, "FontDescriptor");
+        this.fd = fd;
+        this.flags = eng.n(g(fd, "Flags")) || 0;
+        const asc = eng.n(g(fd, "Ascent")), dsc = eng.n(g(fd, "Descent"));
+        this.ascent = asc > 100 ? Math.min(asc, 1300) / 1000 : 0.8;
+        this.descent = dsc < 0 ? Math.max(dsc, -600) / 1000 : -0.2;
+        const nl = this.base.toLowerCase();
+        this.bold = /bold|black|heavy|semibold|demibold|extrabold|ultrabold/.test(nl) ||
+          (eng.n(g(fd, "FontWeight")) || 0) >= 600 || !!(this.flags & 0x40000);
+        this.italic = /italic|oblique|slant/.test(nl) || !!(this.flags & 64) ||
+          Math.abs(eng.n(g(fd, "ItalicAngle")) || 0) > 0.5;
+        this.mono = /courier|mono|consol|menlo/.test(nl) || !!(this.flags & 1);
+        this.serif = !this.mono && (
+          (/times|georgia|garamond|cambria|palatino|minion|baskerville|bodoni|didot|antiqua|serif/.test(nl) && !/sans/.test(nl)) ||
+          (!!(this.flags & 2) && !/sans|arial|helvet|inter|roboto|open|lato|calibri|verdana|tahoma|segoe|montserrat|poppins/.test(nl)));
+        this.ff2 = g(fd, "FontFile2");
+        this.embedded = this.type3 || !!(this.ff2 || g(fd, "FontFile") || g(fd, "FontFile3"));
+        const tu = g(dict, "ToUnicode");
+        this.cmap = null;
+        if (tu instanceof PDFRawStream) { try { this.cmap = parseCMap(eng.data(tu)); } catch (e) { this.cmap = null; } }
+        if (this.type0) this.initType0(cid); else this.initSimple(fd);
+      }
+      initType0(cid) {
+        const eng = this.eng, g = (d, k) => eng.get(d, k);
+        const enc = g(this.dict, "Encoding"), encName = eng.name(enc);
+        this.codeLen = 2;
+        this.vertical = false;
+        this.encMap = null;
+        if (encName === "Identity-V") this.vertical = true;
+        else if (enc instanceof PDFRawStream) {
+          try { this.encMap = parseCMap(eng.data(enc)); } catch (e) { this.unsupported = true; }
+          this.vertical = /-V$/.test(eng.name(g(enc, "CMapName")) || "");
+        } else if (encName !== "Identity-H") this.unsupported = true;
+        this.decodable = !!cid && !!this.cmap && !this.unsupported;
+        this.w = new Map();
+        this.dw = cid ? eng.n(g(cid, "DW")) : undefined;
+        if (this.dw === undefined) this.dw = 1000;
+        const W = cid && g(cid, "W");
+        if (W instanceof PDFArray) {
+          const a = W.asArray().map((x) => eng.L(x));
+          for (let i = 0; i < a.length; ) {
+            const c0 = eng.n(a[i]);
+            if (a[i + 1] instanceof PDFArray) {
+              a[i + 1].asArray().forEach((w, k) => this.w.set(c0 + k, eng.n(eng.L(w)) ?? this.dw));
+              i += 2;
+            } else {
+              const c1 = eng.n(a[i + 1]), wv = eng.n(a[i + 2]);
+              for (let c = c0; c <= c1 && c - c0 < 65536; c++) this.w.set(c, wv);
+              i += 3;
+            }
+          }
+        }
+        const c2g = cid && g(cid, "CIDToGIDMap");
+        this.c2g = c2g instanceof PDFRawStream ? eng.data(c2g) : null;
+      }
+      initSimple(fd) {
+        const eng = this.eng, g = (d, k) => eng.get(d, k);
+        this.codeLen = 1;
+        this.vertical = false;
+        this.first = eng.n(g(this.dict, "FirstChar")) || 0;
+        const W = g(this.dict, "Widths");
+        this.widths = W instanceof PDFArray ? W.asArray().map((x) => eng.n(eng.L(x)) || 0) : null;
+        this.missingW = eng.n(g(fd, "MissingWidth")) || 0;
+        if (this.type3) {
+          const fm = g(this.dict, "FontMatrix");
+          this.fm0 = fm instanceof PDFArray ? eng.n(eng.L(fm.get(0))) || 0.001 : 0.001;
+        }
+        const enc = g(this.dict, "Encoding");
+        let baseName = eng.name(enc), diffs = null;
+        if (enc instanceof PDFDict) { baseName = eng.name(g(enc, "BaseEncoding")); diffs = g(enc, "Differences"); }
+        this.symbolic = !!(this.flags & 4) && !(this.flags & 32);
+        this.std = this.stdName();
+        let base;
+        if (baseName === "WinAnsiEncoding") base = WIN_ANSI;
+        else if (baseName === "MacRomanEncoding") base = MAC_ROMAN;
+        else if (baseName === "StandardEncoding") base = STD_ENC;
+        else if (this.std === "Symbol" || this.std === "ZapfDingbats" || this.type3) base = null;
+        else if (!enc && this.embedded && this.symbolic) base = null;
+        else base = STD_ENC;
+        this.codeUni = base ? base.slice() : new Array(256).fill(null);
+        this.codeName = new Array(256).fill(null);
+        if (diffs instanceof PDFArray) {
+          let c = 0;
+          for (const x of diffs.asArray()) {
+            const v = eng.L(x);
+            if (v instanceof PDFNumber) c = v.asNumber();
+            else if (v instanceof PDFName && c >= 0 && c < 256) {
+              const n = v.decodeText();
+              this.codeName[c] = n;
+              this.codeUni[c] = glyphUni(n) || null;
+              c++;
+            }
+          }
+        }
+        this.decodable = !this.type3 && (!!this.cmap || this.codeUni.some(Boolean));
+        const cs = g(fd, "CharSet");
+        if (cs instanceof PDFString || cs instanceof PDFHexString) this.charset = new Set(cs.decodeText().split("/").filter(Boolean));
+        this.stdEmb = null;
+        if (!this.widths && !this.embedded) {
+          const n = this.std && this.std !== "Symbol" && this.std !== "ZapfDingbats" ? this.std : stdForStyle(this);
+          try { this.stdEmb = StandardFontEmbedder.for(n); } catch (e) { this.stdEmb = null; }
+        }
+      }
+      stdName() {
+        if (STD14.includes(this.base)) return this.base;
+        const b = this.base.toLowerCase().replace(/[\s_]/g, "");
+        if (/^(arial|helvetica)/.test(b) || /^(times|courier)/.test(b)) return stdForStyle({ bold: this.bold, italic: this.italic, mono: /^courier/.test(b), serif: /^times/.test(b) });
+        if (b === "symbol") return "Symbol";
+        if (/dingbats/.test(b)) return "ZapfDingbats";
+        return null;
+      }
+      get editable() { return this.decodable && !this.vertical && !this.type3 && !this.unsupported; }
+      // Split a shown string into character codes.
+      *codes(bytes) {
+        if (!this.type0) { for (let i = 0; i < bytes.length; i++) yield { code: bytes[i], len: 1, bytes: bytes.subarray(i, i + 1) }; return; }
+        const sp = this.encMap && this.encMap.spaces.length ? this.encMap.spaces : null;
+        for (let i = 0; i < bytes.length; ) {
+          let len = 2;
+          if (sp) {
+            len = 0;
+            for (let n = 1; n <= 4 && !len && i + n <= bytes.length; n++) {
+              let c = 0;
+              for (let k = 0; k < n; k++) c = c * 256 + bytes[i + k];
+              if (sp.some((r) => r.n === n && c >= r.lo && c <= r.hi)) len = n;
+            }
+            if (!len) len = 1;
+          }
+          len = Math.min(len, bytes.length - i);
+          let code = 0;
+          for (let k = 0; k < len; k++) code = code * 256 + bytes[i + k];
+          yield { code, len, bytes: bytes.subarray(i, i + len) };
+          i += len;
+        }
+      }
+      cidOf(code, len) {
+        if (!this.encMap) return code;
+        const c = this.encMap.cid.get(ckey(len, code));
+        return c === undefined ? code : c;
+      }
+      uni(code, len) {
+        if (this.cmap) {
+          const s = this.cmap.uni.get(ckey(len, code));
+          if (s && s !== "\u0000") return s;
+        }
+        if (!this.type0 && this.codeUni[code]) return this.codeUni[code];
+        return "";
+      }
+      width(code, len) {
+        if (this.type0) { const w = this.w.get(this.cidOf(code, len)); return w === undefined ? this.dw : w; }
+        if (this.widths) {
+          const i = code - this.first;
+          const w = i >= 0 && i < this.widths.length ? this.widths[i] : this.missingW;
+          return this.type3 ? w * this.fm0 * 1000 : w;
+        }
+        if (this.stdEmb) {
+          const ch = this.codeUni[code];
+          if (!ch) return 500;
+          try { return this.stdEmb.widthOfTextAtSize(ch, 1000); } catch (e) { return 500; }
+        }
+        return this.missingW || 500;
+      }
+      tt() {
+        if (this._tt === undefined) {
+          this._tt = null;
+          if (this.ff2) { try { this._tt = parseTT(this.eng.data(this.ff2)); } catch (e) { this._tt = null; } }
+        }
+        return this._tt;
+      }
+      // Can this font actually draw `code` (i.e. is the glyph in the embedded subset)?
+      canShow(code, len, ch) {
+        const blank = /\s/.test(ch);
+        if (this.type0) {
+          if (!this.embedded) return true;
+          const tt = this.tt();
+          if (!tt) return true;
+          const cid = this.cidOf(code, len);
+          const gid = this.c2g ? (this.c2g[cid * 2] << 8) | this.c2g[cid * 2 + 1] : cid;
+          return blank || tt.has(gid);
+        }
+        if (this.widths) {
+          const i = code - this.first;
+          if (i < 0 || i >= this.widths.length || !(this.widths[i] > 0)) return false;
+        }
+        if (!this.embedded) return true;
+        if (this.charset) {
+          const n = this.codeName[code] || NAME_OF[ch];
+          if (n && !this.charset.has(n)) return false;
+        }
+        const tt = this.tt();
+        if (tt) {
+          const gid = this.simpleGid(tt, code, ch);
+          if (gid === undefined) return !!this.cmap || !this.subset;
+          return blank || tt.has(gid);
+        }
+        return true;
+      }
+      simpleGid(tt, code, ch) {
+        const cm = tt.cmaps, cp = ch ? ch.codePointAt(0) : 0;
+        if (!this.symbolic && cm["3,1"] && cp) { const g = cm["3,1"](cp); if (g) return g; }
+        if (cm["3,0"]) { const g = cm["3,0"](0xf000 + code) || cm["3,0"](code) || cm["3,0"](0xf100 + code) || cm["3,0"](0xf200 + code); if (g) return g; }
+        if (cm["1,0"]) { const g = cm["1,0"](code); if (g) return g; }
+        if (cm["3,1"] && cp) { const g = cm["3,1"](cp); if (g) return g; }
+        return undefined;
+      }
+      // Code that draws `ch` in this font, or undefined when the font can't.
+      encode(ch) {
+        if (!this._rev) {
+          const rev = new Map();
+          const add = (s, code, len) => {
+            if (!s || s === "\u0000") return;
+            let l = rev.get(s);
+            if (!l) rev.set(s, (l = []));
+            if (!l.some((x) => x.code === code && x.len === len)) l.push({ code, len });
+          };
+          if (this.cmap) for (const [k, s] of this.cmap.uni) { const len = k % 8, code = (k - len) / 8; if (this.type0 || len === 1) add(s, code, len); }
+          if (!this.type0) for (let c = 0; c < 256; c++) if (!this.cmap || !this.cmap.uni.has(ckey(1, c))) add(this.codeUni[c], c, 1);
+          for (const l of rev.values()) l.sort((a, b) => a.code - b.code);
+          this._rev = rev;
+        }
+        const list = this._rev.get(ch);
+        if (list) for (const x of list) if (this.canShow(x.code, x.len, ch)) return x;
+        return undefined;
+      }
+      bytesOf(x) {
+        const out = new Uint8Array(x.len);
+        for (let i = x.len - 1, c = x.code; i >= 0; i--, c = Math.floor(c / 256)) out[i] = c & 255;
+        return out;
+      }
+      spaceWidth() {
+        const x = this.encode(" ");
+        if (x) return this.width(x.code, x.len);
+        return this.mono ? 600 : this.serif ? 250 : 278;
+      }
+    }
+
+    /* ---------- engine ---------- */
+    class Engine {
+      constructor(doc) {
+        this.doc = doc;
+        this.ctx = doc.context;
+        this.fontSeq = 0;
+        this.fontCache = new Map();
+        this.fontDictCache = new Map();
+        this.streams = new Map();
+        this.groups = [];
+        this.stdFonts = new Map();
+        this.extraNames = 0;
+        this.fontFiles = new Map();   // font name -> font file bytes the user supplied
+        this.customFonts = new Map();
+      }
+      L(o) { return o instanceof PDFRef ? this.ctx.lookup(o) : o; }
+      get(d, k) {
+        if (d instanceof PDFRawStream) d = d.dict;
+        return d instanceof PDFDict ? this.L(d.get(PDFName.of(k))) : undefined;
+      }
+      n(o) { return o instanceof PDFNumber ? o.asNumber() : undefined; }
+      name(o) { return o instanceof PDFName ? o.decodeText() : undefined; }
+      data(s) { s = this.L(s); return s instanceof PDFRawStream ? decodePDFRawStream(s).decode() : new Uint8Array(0); }
+      inherited(node, key) {
+        for (let n = node, i = 0; n instanceof PDFDict && i < 64; n = this.L(n.get(PDFName.of("Parent"))), i++) {
+          const v = this.L(n.get(PDFName.of(key)));
+          if (v !== undefined) return v;
+        }
+        return undefined;
+      }
+      pageResources(i) { return this.inherited(this.doc.getPage(i).node, "Resources"); }
+      font(x) {
+        const key = x instanceof PDFRef ? x.toString() : null;
+        if (key && this.fontCache.has(key)) return this.fontCache.get(key);
+        const d = this.L(x);
+        if (!(d instanceof PDFDict)) return null;
+        if (!key && this.fontDictCache.has(d)) return this.fontDictCache.get(d);
+        let fi = null;
+        try { fi = new FontInfo(this, d, key ? x : null); } catch (e) { console.warn("font", e); }
+        if (key) this.fontCache.set(key, fi); else this.fontDictCache.set(d, fi);
+        return fi;
+      }
+      allFonts() {
+        if (!this._all) {
+          const list = [];
+          for (const [ref, obj] of this.ctx.enumerateIndirectObjects()) {
+            if (!(obj instanceof PDFDict) || this.name(obj.get(PDFName.of("Type"))) !== "Font") continue;
+            const st = this.name(obj.get(PDFName.of("Subtype")));
+            if (!st || /^CIDFontType/.test(st)) continue;
+            const f = this.font(ref);
+            if (f) list.push(f);
+          }
+          this._all = list;
+        }
+        return this._all;
+      }
+      stream(ref) {
+        if (!(ref instanceof PDFRef)) return null;
+        const key = ref.toString();
+        if (this.streams.has(key)) return this.streams.get(key);
+        let st = null;
+        try {
+          const raw = this.ctx.lookup(ref);
+          if (raw instanceof PDFRawStream) {
+            const bytes = decodePDFRawStream(raw).decode();
+            st = { key, ref, raw, bytes, ops: parseContent(bytes), modified: false };
+          }
+        } catch (e) { console.warn("content stream", key, e); }
+        this.streams.set(key, st);
+        return st;
+      }
+
+      /* ----- interpretation ----- */
+      analyzePage(pi) {
+        const node = this.doc.getPage(pi).node;
+        const res = this.inherited(node, "Resources");
+        const raw = node.get(PDFName.of("Contents"));
+        const cv = this.L(raw);
+        const refs = cv instanceof PDFArray ? cv.asArray() : raw instanceof PDFRef ? [raw] : [];
+        const runs = [];
+        const gs = { ctm: ID, font: null, fontName: null, size: 0, Tc: 0, Tw: 0, Th: 1, TL: 0, Tr: 0, Ts: 0, fill: [0, 0, 0], fcs: 1 };
+        this.exec(refs.map((r) => this.stream(r)).filter(Boolean), res, gs, runs, "p" + pi, 0, pi);
+        const groups = this.group(runs, pi);
+        this.groups.push(...groups);
+        return { runs, groups };
+      }
+      exec(streams, res, gs0, runs, ctxId, depth, pi) {
+        let gs = { ...gs0 };
+        const stack = [];
+        let Tm = ID, Tlm = ID;
+        for (const st of streams) {
+          const ops = st.ops;
+          for (let oi = 0; oi < ops.length; oi++) {
+            const { op, args } = ops[oi];
+            const a = (i) => num(args[i]);
+            switch (op) {
+              case "q": stack.push({ ...gs }); break;
+              case "Q": if (stack.length) gs = stack.pop(); break;
+              case "cm": if (args.length >= 6) gs.ctm = mul([a(0), a(1), a(2), a(3), a(4), a(5)], gs.ctm); break;
+              case "BT": Tm = Tlm = ID; break;
+              case "Tf":
+                if (args[0] && args[0].name !== undefined) { gs.fontName = args[0].name; gs.font = this.fontFromRes(res, args[0].name); }
+                gs.size = a(1);
+                break;
+              case "Tc": gs.Tc = a(0); break;
+              case "Tw": gs.Tw = a(0); break;
+              case "Tz": gs.Th = a(0) / 100; break;
+              case "TL": gs.TL = a(0); break;
+              case "Ts": gs.Ts = a(0); break;
+              case "Tr": gs.Tr = a(0); break;
+              case "Td": Tlm = Tm = mul([1, 0, 0, 1, a(0), a(1)], Tlm); break;
+              case "TD": gs.TL = -a(1); Tlm = Tm = mul([1, 0, 0, 1, a(0), a(1)], Tlm); break;
+              case "Tm": Tlm = Tm = [a(0), a(1), a(2), a(3), a(4), a(5)]; break;
+              case "T*": Tlm = Tm = mul([1, 0, 0, 1, 0, -gs.TL], Tlm); break;
+              case "'": case '"':
+                if (op === '"') { gs.Tw = a(0); gs.Tc = a(1); }
+                Tlm = Tm = mul([1, 0, 0, 1, 0, -gs.TL], Tlm);
+                Tm = this.show(op, args, gs, Tm, st, oi, res, runs, ctxId, pi);
+                break;
+              case "Tj": case "TJ":
+                Tm = this.show(op, args, gs, Tm, st, oi, res, runs, ctxId, pi);
+                break;
+              case "g": gs.fill = [a(0), a(0), a(0)]; gs.fcs = 1; break;
+              case "rg": gs.fill = [a(0), a(1), a(2)]; gs.fcs = 3; break;
+              case "k": gs.fill = cmyk(a(0), a(1), a(2), a(3)); gs.fcs = 4; break;
+              case "cs": gs.fcs = this.csComponents(res, args[0]); gs.fill = gs.fcs === 4 ? [0, 0, 0] : gs.fcs ? [0, 0, 0] : null; break;
+              case "sc": case "scn": {
+                const v = args.filter((x) => typeof x === "number");
+                if (gs.fcs === 1 && v.length >= 1) gs.fill = [v[0], v[0], v[0]];
+                else if (gs.fcs === 3 && v.length >= 3) gs.fill = v.slice(0, 3);
+                else if (gs.fcs === 4 && v.length >= 4) gs.fill = cmyk(v[0], v[1], v[2], v[3]);
+                else gs.fill = null;
+                break;
+              }
+              case "gs": {
+                const eg = this.get(this.get(res, "ExtGState"), args[0] && args[0].name);
+                const f = this.get(eg, "Font");
+                if (f instanceof PDFArray) { gs.font = this.font(f.get(0)); gs.fontName = null; gs.size = this.n(this.L(f.get(1))) || gs.size; }
+                break;
+              }
+              case "Do": {
+                if (depth > 8 || !args[0] || args[0].name === undefined) break;
+                const xo = this.get(res, "XObject");
+                const xref = xo instanceof PDFDict ? xo.get(PDFName.of(args[0].name)) : null;
+                const x = this.L(xref);
+                if (!(xref instanceof PDFRef) || !(x instanceof PDFRawStream) || this.name(x.dict.get(PDFName.of("Subtype"))) !== "Form") break;
+                const mtx = this.get(x, "Matrix");
+                const m = mtx instanceof PDFArray ? mtx.asArray().map((v) => this.n(this.L(v)) || 0) : ID;
+                const xres = this.get(x, "Resources") || res;
+                const sub = this.stream(xref);
+                if (sub) this.exec([sub], xres, { ...gs, ctm: mul(m.length === 6 ? m : ID, gs.ctm) }, runs, ctxId + "/" + sub.key, depth + 1, pi);
+                break;
+              }
+            }
+          }
+        }
+      }
+      fontFromRes(res, name) {
+        const fonts = this.get(res, "Font");
+        if (!(fonts instanceof PDFDict)) return null;
+        const v = fonts.get(PDFName.of(name));
+        return v ? this.font(v) : null;
+      }
+      csComponents(res, arg) {
+        const n = arg && arg.name;
+        if (n === "DeviceGray" || n === "CalGray" || n === "G") return 1;
+        if (n === "DeviceRGB" || n === "CalRGB" || n === "RGB") return 3;
+        if (n === "DeviceCMYK" || n === "CMYK") return 4;
+        const cs = this.get(this.get(res, "ColorSpace"), n);
+        if (cs instanceof PDFArray) {
+          const kind = this.name(this.L(cs.get(0)));
+          if (kind === "ICCBased") return this.n(this.get(this.L(cs.get(1)), "N")) || 0;
+          if (kind === "CalRGB" || kind === "Lab") return 3;
+          if (kind === "CalGray") return 1;
+        } else if (cs instanceof PDFName) return this.csComponents(null, { name: this.name(cs) });
+        return 0;
+      }
+      show(kind, args, gs, Tm, st, oi, res, runs, ctxId, pi) {
+        const font = gs.font;
+        const arg = kind === '"' ? args[2] : args[0];
+        if (!font) return Tm;
+        const Tfs = gs.size, Th = gs.Th, elems = [];
+        let x = 0;
+        const add = (bytes) => {
+          for (const c of font.codes(bytes)) {
+            const w = font.width(c.code, c.len);
+            const sp = c.len === 1 && c.code === 32;
+            const adv = font.vertical ? 0 : ((w / 1000) * Tfs + gs.Tc + (sp ? gs.Tw : 0)) * Th;
+            elems.push({ code: c.code, len: c.len, bytes: c.bytes, uni: font.uni(c.code, c.len), x0: x, adv });
+            x += adv;
+          }
+        };
+        if (Array.isArray(arg)) {
+          for (const e of arg) {
+            if (typeof e === "number") { const d = (-e / 1000) * Tfs * Th; elems.push({ k: e, x0: x, adv: d }); x += d; }
+            else if (e && e.str) add(e.str);
+          }
+        } else if (arg && arg.str) add(arg.str);
+        const op = st.ops[oi];
+        const M = mul(Tm, gs.ctm);
+        runs.push({
+          key: st.key + ":" + oi, stream: st, s: op.s, e: op.e, kind, args: kind === '"' ? [args[0], args[1]] : null,
+          font, fontName: gs.fontName, res, Tfs, Th, Tc: gs.Tc, Tw: gs.Tw, Ts: gs.Ts, Tr: gs.Tr,
+          M, sx: Math.hypot(M[0], M[1]) * Math.sign(Tfs * Th || 1), elems, endTx: x,
+          fill: gs.fill, ctxId, page: pi,
+          editable: font.editable && Tfs !== 0 && Th !== 0 && gs.Tr !== 3 && gs.Tr !== 7 && elems.some((e) => e.k === undefined),
+        });
+        return mul([1, 0, 0, 1, x, 0], Tm);
+      }
+
+      /* ----- grouping runs into editable phrases ----- */
+      group(runs, pi) {
+        const pieces = [];
+        for (const r of runs) {
+          if (!r.editable) continue;
+          let cur = null;
+          r.elems.forEach((e, i) => {
+            if (e.k !== undefined) { if (cur && (e.k < -450 || e.k > 300)) cur = null; return; }
+            if (!cur) pieces.push((cur = { run: r, idx: [] }));
+            cur.idx.push(i);
+          });
+        }
+        const groups = [];
+        let g = null;
+        const color = (r) => (r.fill ? r.fill.map((v) => Math.round(v * 255)).join(",") : "?");
+        for (const p of pieces) {
+          const r = p.run, first = r.elems[p.idx[0]];
+          const O = pt(r.M, first.x0, 0);
+          const dir = unit(vec(r.M, Math.sign(r.Tfs * r.Th) || 1, 0));
+          const sizeU = Math.abs(r.Tfs) * Math.hypot(r.M[2], r.M[3]);
+          let join = false;
+          if (g && g.font === r.font && Math.abs(g.size - sizeU) < 0.01 * sizeU && g.Th === r.Th && g.Tr === r.Tr &&
+              g.Ts === r.Ts && g.color === color(r) && g.ctxId === r.ctxId && g.dir[0] * dir[0] + g.dir[1] * dir[1] > 0.999) {
+            const dx = O[0] - g.O[0], dy = O[1] - g.O[1];
+            const v = g.dir[0] * dy - g.dir[1] * dx, u = g.dir[0] * dx + g.dir[1] * dy;
+            const gap = u - g.uEnd;
+            join = Math.abs(v) < 0.15 * sizeU && gap > -0.25 * sizeU && gap < 0.45 * sizeU;
+          }
+          if (!join) {
+            g = {
+              page: pi, pieces: [], units: [], O, dir, size: sizeU, font: r.font, Th: r.Th, Tr: r.Tr, Ts: r.Ts,
+              color: color(r), fill: r.fill, ctxId: r.ctxId, uEnd: 0,
+              up: unit(vec(r.M, 0, Math.sign(r.Tfs) || 1)), rise: r.Ts * Math.hypot(r.M[2], r.M[3]) * (Math.sign(r.Tfs) || 1),
+            };
+            groups.push(g);
+          }
+          g.pieces.push(p);
+          for (const i of p.idx) {
+            const e = r.elems[i];
+            const a = pt(r.M, e.x0, 0), b = pt(r.M, e.x0 + e.adv, 0);
+            const u0 = g.dir[0] * (a[0] - g.O[0]) + g.dir[1] * (a[1] - g.O[1]);
+            const u1 = g.dir[0] * (b[0] - g.O[0]) + g.dir[1] * (b[1] - g.O[1]);
+            const ch = (e.uni || "�").replace(/ /g, " ");
+            const prev = g.units[g.units.length - 1];
+            if (prev && u0 - prev.u1 > 0.15 * sizeU && !/\s$/.test(prev.chars) && !/^\s/.test(ch))
+              g.units.push({ sep: true, chars: " ", u0: prev.u1, u1: u0 });
+            g.units.push({ run: r, ei: i, chars: ch, u0, u1 });
+            g.uEnd = Math.max(g.uEnd, u1);
+          }
+        }
+        for (const gr of groups) {
+          gr.text = gr.units.map((u) => u.chars).join("");
+          gr.key = gr.pieces.map((p) => p.run.key + "#" + p.idx[0]).join("|");
+          gr.editKey = gr.key;
+          // Letter spacing the generator applied between glyphs (e.g. CSS letter-spacing).
+          const gaps = [];
+          for (let k = 1; k < gr.units.length; k++) {
+            const a = gr.units[k - 1], b = gr.units[k];
+            if (!a.sep && !b.sep && !/\s/.test(a.chars + b.chars)) gaps.push(b.u0 - a.u1);
+          }
+          gaps.sort((x, y) => x - y);
+          const med = gaps.length ? gaps[gaps.length >> 1] : 0;
+          gr.tracking = Math.abs(med) > 0.01 * gr.size && Math.abs(med) < 0.3 * gr.size ? med : 0;
+        }
+        // The same text drawn twice on top of itself (a faux-bold trick) is edited as one.
+        for (let i = 0; i < groups.length; i++) {
+          for (let j = i + 1; j < groups.length; j++) {
+            const a = groups[i], b = groups[j];
+            if (b.dup || a.text !== b.text) continue;
+            if (Math.hypot(a.O[0] - b.O[0], a.O[1] - b.O[1]) < 0.2 * a.size) { b.dup = true; b.editKey = a.editKey; }
+          }
+        }
+        return groups;
+      }
+      quad(g) {
+        return {
+          O: [g.O[0] + g.up[0] * g.rise, g.O[1] + g.up[1] * g.rise], dir: g.dir, up: g.up, uEnd: g.uEnd,
+          size: g.size, asc: g.font.ascent, desc: g.font.descent,
+        };
+      }
+
+      /* ----- applying edits ----- */
+      async std(name) {
+        if (!this.stdFonts.has(name)) this.stdFonts.set(name, await this.doc.embedFont(name));
+        return this.stdFonts.get(name);
+      }
+      // Resource name under which `target` (FontInfo or PDFRef) is reachable from `res`.
+      fontName(res, target) {
+        if (!(res instanceof PDFDict)) return null;
+        let fonts = this.get(res, "Font");
+        if (!(fonts instanceof PDFDict)) { fonts = this.ctx.obj({}); res.set(PDFName.of("Font"), fonts); }
+        const ref = target instanceof PDFRef ? target : target.ref;
+        const dict = target instanceof PDFRef ? null : target.dict;
+        for (const [k, v] of fonts.entries()) {
+          if ((ref && v instanceof PDFRef && v.toString() === ref.toString()) || (dict && this.L(v) === dict)) return k.decodeText();
+        }
+        if (!ref) return null;
+        let n;
+        do n = "PEd" + ++this.extraNames; while (fonts.get(PDFName.of(n)));
+        fonts.set(PDFName.of(n), ref);
+        return n;
+      }
+      async pickGlyph(ch, r, warnings) {
+        const f = r.font;
+        let x = f.encode(ch);
+        if (x) return { font: null, bytes: f.bytesOf(x), w: f.width(x.code, x.len), sp: x.len === 1 && x.code === 32 };
+        for (const s of this.allFonts()) {
+          if (s === f || s.base !== f.base || !s.editable) continue;
+          x = s.encode(ch);
+          if (!x) continue;
+          const name = this.fontName(r.res, s);
+          if (name) return { font: { name }, bytes: s.bytesOf(x), w: s.width(x.code, x.len), sp: x.len === 1 && x.code === 32 };
+        }
+        const files = this.fontFiles.get(f.base);
+        if (files) {
+          try {
+            if (!this.customFonts.has(f.base)) this.customFonts.set(f.base, await this.doc.embedFont(files, { subset: true }));
+            const cf = this.customFonts.get(f.base);
+            if (cf.embedder.font.hasGlyphForCodePoint(ch.codePointAt(0))) {
+              const name = this.fontName(r.res, cf.ref);
+              if (name) return { font: { name }, bytes: cf.encodeText(ch).asBytes(), w: cf.widthOfTextAtSize(ch, 1000), sp: false };
+            }
+          } catch (e) { console.warn("font file", e); }
+        }
+        const stdName = stdForStyle(f);
+        try {
+          const pf = await this.std(stdName);
+          const bytes = pf.encodeText(ch).asBytes();
+          const name = this.fontName(r.res, pf.ref);
+          if (name) {
+            if (!/\s/.test(ch)) warnings.push({ ch, font: f.base, used: stdName });
+            return { font: { name }, bytes, w: pf.widthOfTextAtSize(ch, 1000), sp: ch === " " };
+          }
+        } catch (e) { /* not encodable in WinAnsi */ }
+        if (!/\s/.test(ch)) warnings.push({ ch, font: f.base, used: null });
+        return null;
+      }
+      async encodeText(text, r, trackingU, warnings) {
+        const content = [];
+        const K = 1000 / (r.Tfs * r.Th);
+        const tr = trackingU / r.sx;
+        const chars = Array.from(text);
+        let adv = 0;
+        for (let i = 0; i < chars.length; i++) {
+          const ch = chars[i];
+          const pick = await this.pickGlyph(ch, r, warnings);
+          let a;
+          if (pick) {
+            a = ((pick.w / 1000) * r.Tfs + r.Tc + (pick.sp ? r.Tw : 0)) * r.Th;
+            content.push({ font: pick.font, bytes: pick.bytes });
+          } else if (/\s/.test(ch)) {
+            a = ((r.font.spaceWidth() / 1000) * r.Tfs + r.Tc + r.Tw) * r.Th;
+            content.push({ k: -a * K });
+          } else continue;
+          adv += a;
+          if (tr && i < chars.length - 1) { content.push({ k: -tr * K }); adv += tr; }
+        }
+        return { content, adv };
+      }
+      async planGroup(g, N, align, planOf, warnings) {
+        const U = g.units, D = g.text;
+        const max = Math.min(D.length, N.length);
+        let p = 0;
+        while (p < max && D[p] === N[p]) p++;
+        let q = 0;
+        while (q < max - p && D[D.length - 1 - q] === N[N.length - 1 - q]) q++;
+        let i0 = 0, pc = 0;
+        while (i0 < U.length && pc + U[i0].chars.length <= p) pc += U[i0++].chars.length;
+        let i1 = U.length, qc = 0;
+        while (i1 > i0 && qc + U[i1 - 1].chars.length <= q) qc += U[--i1].chars.length;
+        const mid = N.slice(pc, N.length - qc);
+
+        // The run that will carry the new characters, and where in it they go.
+        let host = null, at = 0;
+        for (let k = i0; k < i1 && !host; k++) if (!U[k].sep) { host = U[k]; at = U[k].ei - 0.25; }
+        for (let k = i0 - 1; k >= 0 && !host; k--) if (!U[k].sep) { host = U[k]; at = U[k].ei + 0.5; }
+        for (let k = i1; k < U.length && !host; k++) if (!U[k].sep) { host = U[k]; at = U[k].ei - 0.5; }
+        if (!host) return;
+        const hr = host.run;
+        const enc = await this.encodeText(mid, hr, g.tracking, warnings);
+        const newW = enc.adv * hr.sx;
+        let startU, delta;
+        if (i1 > i0) { startU = U[i0].u0; delta = newW - (U[i1 - 1].u1 - U[i0].u0); }
+        else {
+          const tr = mid ? g.tracking : 0;
+          startU = i0 > 0 ? U[i0 - 1].u1 + tr : U.length ? U[0].u0 : 0;
+          delta = newW + tr;
+        }
+        const a = align === "left" || align === "right" || align === "center" ? align : g.autoAlign || "left";
+        const sB = a === "right" ? -delta : a === "center" ? -delta / 2 : 0;
+        const sA = a === "right" ? 0 : a === "center" ? delta / 2 : delta;
+        U.forEach((u, k) => {
+          if (u.sep) return;
+          planOf(u.run).glyph.set(u.ei, k < i0 ? { shift: sB } : k >= i1 ? { shift: sA } : { drop: true });
+        });
+        if (enc.content.length) {
+          const base = pt(hr.M, 0, 0);
+          const uBase = g.dir[0] * (base[0] - g.O[0]) + g.dir[1] * (base[1] - g.O[1]);
+          planOf(hr).inserts.push({ at, tx: (startU + sB - uBase) / hr.sx, content: enc.content, adv: enc.adv });
+        }
+      }
+      emitRun(r, plan) {
+        let changed = plan.inserts.length > 0;
+        for (const v of plan.glyph.values()) if (v.drop || Math.abs(v.shift) > 1e-9) changed = true;
+        if (!changed) return null;
+        const items = [];
+        const ins = plan.inserts.slice().sort((x, y) => x.at - y.at);
+        let ii = 0, seg = null;
+        const close = () => { if (seg) items.push(seg); seg = null; };
+        const flushIns = (limit) => {
+          while (ii < ins.length && ins[ii].at < limit) { close(); const x = ins[ii++]; items.push({ tx: x.tx, content: x.content, adv: x.adv }); }
+        };
+        r.elems.forEach((e, i) => {
+          flushIns(i);
+          if (e.k !== undefined) { if (seg) seg.pend.push(e); return; }
+          const pl = plan.glyph.get(i) || { shift: 0 };
+          if (pl.drop) { close(); return; }
+          const sh = pl.shift / r.sx;
+          if (seg && Math.abs(seg.sh - sh) < 1e-9) {
+            for (const k of seg.pend) { seg.content.push({ k: k.k }); seg.adv += k.adv; }
+            seg.pend = [];
+          } else { close(); seg = { tx: e.x0 + sh, sh, content: [], adv: 0, pend: [] }; }
+          seg.content.push({ font: null, bytes: e.bytes });
+          seg.adv += e.adv;
+        });
+        flushIns(Infinity);
+        close();
+
+        const K = 1000 / (r.Tfs * r.Th);
+        const orig = r.fontName || this.fontName(r.res, r.font);
+        if (!orig) return null;
+        const out = [];
+        if (r.kind === "'") out.push("T*");
+        else if (r.kind === '"') out.push(fmt(num(r.args[0])) + " Tw " + fmt(num(r.args[1])) + " Tc T*");
+        let arr = [], cur = 0, curFont = null;
+        const flush = () => { if (arr.length) out.push("[" + arr.join(" ") + "] TJ"); arr = []; };
+        const move = (d) => { if (Math.abs(d * K) > 1e-4) arr.push(fmt(-d * K)); };
+        for (const it of items) {
+          move(it.tx - cur);
+          cur = it.tx;
+          for (const c of it.content) {
+            if (c.k !== undefined) { arr.push(fmt(c.k)); continue; }
+            const fname = c.font ? c.font.name : null;
+            if (fname !== curFont) { flush(); out.push("/" + escName(fname || orig) + " " + fmtSize(r.Tfs) + " Tf"); curFont = fname; }
+            arr.push(hexOf(c.bytes));
+          }
+          cur += it.adv;
+        }
+        move(r.endTx - cur);
+        if (curFont !== null) { flush(); out.push("/" + escName(orig) + " " + fmtSize(r.Tfs) + " Tf"); }
+        flush();
+        return out.join(" ");
+      }
+      // Rewrite every touched content stream for the given edits.
+      // `edits` maps a group's editKey to { text, align }; `hiddenKey` blanks one group.
+      async apply(edits, hiddenKey) {
+        const warnings = [];
+        const plans = new Map();
+        const planOf = (r) => {
+          let p = plans.get(r);
+          if (!p) plans.set(r, (p = { glyph: new Map(), inserts: [] }));
+          return p;
+        };
+        const done = new Set();
+        for (const g of this.groups) {
+          if (done.has(g.key)) continue;
+          const hidden = hiddenKey && g.editKey === hiddenKey;
+          const ed = hidden ? { text: "", align: "left" } : edits.get(g.editKey);
+          if (!ed) continue;
+          const N = ed.text.replace(/ /g, " ");
+          if (!hidden && N === g.text) continue;
+          done.add(g.key);
+          await this.planGroup(g, N, ed.align, planOf, warnings);
+        }
+        const byStream = new Map();
+        for (const [r, plan] of plans) {
+          const txt = this.emitRun(r, plan);
+          if (txt === null) continue;
+          if (!byStream.has(r.stream)) byStream.set(r.stream, []);
+          byStream.get(r.stream).push({ s: r.s, e: r.e, txt });
+        }
+        const te = new TextEncoder();
+        for (const st of this.streams.values()) {
+          if (!st) continue;
+          const list = byStream.get(st);
+          if (!list) {
+            if (st.modified) { this.ctx.assign(st.ref, st.raw); st.modified = false; }
+            continue;
+          }
+          list.sort((x, y) => x.s - y.s);
+          const parts = [];
+          let pos = 0;
+          for (const sp of list) {
+            parts.push(st.bytes.subarray(pos, sp.s), te.encode(" " + sp.txt + " "));
+            pos = sp.e;
+          }
+          parts.push(st.bytes.subarray(pos));
+          const total = parts.reduce((n, x) => n + x.length, 0);
+          const bytes = new Uint8Array(total);
+          let o = 0;
+          for (const x of parts) { bytes.set(x, o); o += x.length; }
+          const ns = this.ctx.flateStream(bytes, {});
+          for (const [k, v] of st.raw.dict.entries()) {
+            const kn = k.decodeText();
+            if (kn !== "Length" && kn !== "Filter" && kn !== "DecodeParms" && kn !== "DL") ns.dict.set(k, v);
+          }
+          this.ctx.assign(st.ref, ns);
+          st.modified = true;
+        }
+        return warnings;
+      }
+    }
+    function cmyk(c, m, y, k) { return [(1 - c) * (1 - k), (1 - m) * (1 - k), (1 - y) * (1 - k)]; }
+
+    return { Engine, stdForStyle, pt, unit, fmt, hexOf };
+  })();
+
+  /* =========================== editor UI =========================== */
   const errorBanner = document.getElementById("error-banner");
+  const noticeBanner = document.getElementById("notice-banner");
   function showError(msg) {
     errorBanner.textContent = msg;
     errorBanner.classList.add("show");
@@ -155,8 +1355,8 @@
   }
 
   const RENDER_SCALE = 2.0;
-  let originalBytes = null;
-  let pdfDoc = null;
+  const { PDFDocument, PDFName, PDFRef, PDFArray } = PDFLib;
+  const { Engine, stdForStyle, pt, unit, fmt, hexOf } = PdfTextEngine;
 
   const fileInput = document.getElementById("file-input");
   const saveBtn = document.getElementById("save-btn");
@@ -166,6 +1366,18 @@
   const emptyState = document.getElementById("empty-state");
   const loading = document.getElementById("loading");
   const loadingText = document.getElementById("loading-text");
+
+  const S = {
+    name: "", original: null, doc: null, eng: null, pages: [],
+    items: new Map(),     // id -> editable item (text group or image-text patch)
+    edits: new Map(),     // editKey -> { text, align }
+    patches: new Map(),   // editKey -> { text, align }
+    overlays: new Map(),  // page index -> overlay content stream ref
+    seq: 0, pdf: null, focused: null, chain: Promise.resolve(),
+    fontFiles: new Map(), // font name -> font file the user supplied (kept across files)
+    fontVersion: 0,
+  };
+  window.__pdfEditor = S;
 
   function showLoading(msg) {
     loadingText.textContent = msg || "Loading…";
@@ -179,185 +1391,562 @@
     clearError();
     showLoading("Loading PDF…");
     try {
-      originalBytes = await file.arrayBuffer();
-      await loadPdf(originalBytes);
-      statusEl.textContent = file.name;
+      await loadPdf(new Uint8Array(await file.arrayBuffer()));
+      S.name = file.name;
       saveBtn.disabled = false;
       resetBtn.disabled = false;
+      updateStatus();
     } catch (err) {
       console.error(err);
       showError("Failed to load PDF: " + (err.message || err));
     } finally {
       hideLoading();
+      fileInput.value = "";
     }
   });
 
   async function loadPdf(bytes) {
+    let doc;
+    try {
+      doc = await PDFDocument.load(bytes, { updateMetadata: false });
+    } catch (err) {
+      if (/encrypt/i.test(String(err && err.message))) throw new Error("this PDF is encrypted (password-protected), so its text can't be edited.");
+      throw err;
+    }
+    S.seq++;
+    S.original = bytes;
+    S.doc = doc;
+    S.eng = new Engine(doc);
+    S.eng.fontFiles = S.fontFiles;
+    if (S.fontFiles.size && typeof fontkit !== "undefined") doc.registerFontkit(fontkit);
+    S.items.clear(); S.edits.clear(); S.patches.clear(); S.overlays.clear();
+    S.focused = null;
+    showNotice([]);
+    if (S.pdf) { S.pdf.destroy(); S.pdf = null; }
+    const pdf = await pdfjsLib.getDocument({ data: bytes.slice(0) }).promise;
+    S.pdf = pdf;
     if (emptyState.parentNode) emptyState.remove();
     main.innerHTML = "";
-    const loadingTask = pdfjsLib.getDocument({ data: bytes.slice(0) });
-    pdfDoc = await loadingTask.promise;
-    for (let i = 1; i <= pdfDoc.numPages; i++) {
-      await renderPage(i);
+    S.pages = [];
+    for (let i = 0; i < pdf.numPages; i++) S.pages.push(await setupPage(await pdf.getPage(i + 1), i));
+  }
+
+  async function setupPage(page, i) {
+    const vp = page.getViewport({ scale: RENDER_SCALE });
+    const wrap = document.createElement("div");
+    wrap.className = "page-wrap";
+    wrap.style.width = vp.width + "px";
+    wrap.style.height = vp.height + "px";
+    wrap.dataset.page = i + 1;
+    const layer = document.createElement("div");
+    layer.className = "text-layer";
+    const P = { index: i, vp, wrap, layer, canvas: null, sig: "", items: [] };
+    main.appendChild(wrap);
+    await paint(P, page);
+    wrap.appendChild(layer);
+
+    let groups = [];
+    try { groups = S.eng.analyzePage(i).groups; } catch (err) { console.error("page analysis failed", err); }
+    for (const g of groups) {
+      g.kind = "g";
+      g.id = "i" + (S.items.size + 1);
+      g.geo = geometry(S.eng.quad(g), vp);
+      g.style = { bold: g.font.bold, italic: g.font.italic, serif: g.font.serif, mono: g.font.mono };
+      g.css = g.fill ? "rgb(" + g.fill.map((v) => Math.round(Math.min(1, Math.max(0, v)) * 255)).join(",") + ")" : "#000";
+      S.items.set(g.id, g);
+      P.items.push(g);
+    }
+
+    // Text the engine can't rewrite in place (scanned pages with an OCR layer,
+    // unusual fonts): edited by patching over it with the sampled background.
+    try {
+      const tc = await page.getTextContent();
+      tc.items.forEach((it, idx) => {
+        if (!it.str || !it.str.trim() || !it.transform) return;
+        const tr = it.transform, size = Math.hypot(tr[2], tr[3]);
+        if (!size || !(it.width > 0)) return;
+        const st = tc.styles[it.fontName] || {};
+        const quad = {
+          O: [tr[4], tr[5]], dir: unit([tr[0], tr[1]]), up: unit([tr[2], tr[3]]), uEnd: it.width, size,
+          asc: st.ascent > 0 ? st.ascent : 0.8, desc: st.descent < 0 ? st.descent : -0.2,
+        };
+        const geo = geometry(quad, vp);
+        const str = it.str.trim();
+        if (P.items.some((g) => {
+          if (g.kind !== "g") return false;
+          const o = overlap(geo.box, g.geo.box);
+          return o > 0.4 || (o > 0 && (g.text.includes(str) || str.includes(g.text.trim())));
+        })) return;
+        const t = {
+          kind: "p", id: "i" + (S.items.size + 1), editKey: "p" + i + ":" + idx, page: i, text: it.str,
+          quad, geo, style: patchStyle(page, it, st), css: "#000",
+        };
+        S.items.set(t.id, t);
+        P.items.push(t);
+      });
+    } catch (err) { console.warn("text content", err); }
+
+    autoAlign(P.items, vp);
+    for (const it of P.items) if (!it.dup) layer.appendChild(makeSpan(it));
+    return P;
+  }
+
+  function patchStyle(page, it, st) {
+    let name = "", bold = false, italic = false;
+    try {
+      const fo = page.commonObjs.get(it.fontName);
+      if (fo) { name = fo.name || ""; bold = !!(fo.bold || fo.black); italic = !!fo.italic; }
+    } catch (e) { /* font not loaded */ }
+    const fam = st.fontFamily || "";
+    return {
+      bold: bold || /bold|black|heavy|semibold/i.test(name),
+      italic: italic || /italic|oblique/i.test(name),
+      mono: fam === "monospace" || /courier|mono/i.test(name),
+      serif: fam === "serif" || (/times|serif|georgia/i.test(name) && !/sans/i.test(name)),
+    };
+  }
+
+  async function paint(P, page) {
+    const dpr = window.devicePixelRatio || 1;
+    const rv = page.getViewport({ scale: RENDER_SCALE * dpr });
+    const canvas = document.createElement("canvas");
+    canvas.width = rv.width;
+    canvas.height = rv.height;
+    canvas.style.width = P.vp.width + "px";
+    canvas.style.height = P.vp.height + "px";
+    await page.render({ canvasContext: canvas.getContext("2d"), viewport: rv }).promise;
+    if (P.canvas) P.canvas.replaceWith(canvas); else P.wrap.insertBefore(canvas, P.wrap.firstChild);
+    P.canvas = canvas;
+  }
+
+  // Where a run of text sits on screen: baseline origin/end, angle, size, box.
+  function geometry(q, vp) {
+    const T = vp.transform;
+    const at = (u, v) => pt(T, q.O[0] + q.dir[0] * u + q.up[0] * v, q.O[1] + q.dir[1] * u + q.up[1] * v);
+    const o = at(0, 0), e = at(q.uEnd, 0), d = at(1, 0), top = at(0, q.size);
+    const ang = Math.atan2(d[1] - o[1], d[0] - o[0]);
+    const fontPx = Math.hypot(top[0] - o[0], top[1] - o[1]);
+    const cs = [at(0, q.desc * q.size), at(q.uEnd, q.desc * q.size), at(q.uEnd, q.asc * q.size), at(0, q.asc * q.size)];
+    const xs = cs.map((c) => c[0]), ys = cs.map((c) => c[1]);
+    return {
+      o, e, ang, fontPx, ascPx: q.asc * fontPx, descPx: q.desc * fontPx,
+      widthPx: Math.hypot(e[0] - o[0], e[1] - o[1]),
+      box: { x0: Math.min(...xs), y0: Math.min(...ys), x1: Math.max(...xs), y1: Math.max(...ys) },
+      horiz: Math.abs(Math.sin(ang)) < 0.01 && Math.cos(ang) > 0,
+    };
+  }
+  function overlap(a, b) {
+    const w = Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0), h = Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0);
+    if (w <= 0 || h <= 0) return 0;
+    return (w * h) / Math.max(1e-6, (a.x1 - a.x0) * (a.y1 - a.y0));
+  }
+
+  // Guess how each item is aligned (so longer/shorter text grows the right
+  // way): right-aligned columns of numbers share a right edge with the rows
+  // just above and below them, and so on.
+  function autoAlign(items, vp) {
+    const hs = items.filter((t) => t.geo.horiz && !t.dup);
+    const maxR = Math.max(0, ...hs.map((t) => t.geo.box.x1));
+    for (const t of items) {
+      t.autoAlign = "left";
+      if (!t.geo.horiz) continue;
+      const b = t.geo.box, lh = b.y1 - b.y0, tol = 0.5 + 0.1 * t.geo.fontPx;
+      let L = 0, R = 0, C = 0;
+      for (const o of hs) {
+        if (o === t) continue;
+        const ob = o.geo.box, ratio = o.geo.fontPx / t.geo.fontPx;
+        if (ratio < 0.75 || ratio > 1.34) continue;
+        if (ob.y0 < b.y1 && ob.y1 > b.y0) continue;
+        if (Math.max(ob.y0 - b.y1, b.y0 - ob.y1) > 5 * lh) continue;
+        if (ob.x1 < b.x0 || ob.x0 > b.x1) continue;
+        if (Math.abs(ob.x0 - b.x0) < tol) L++;
+        if (Math.abs(ob.x1 - b.x1) < tol) R++;
+        if (Math.abs(ob.x0 + ob.x1 - b.x0 - b.x1) / 2 < tol) C++;
+      }
+      const numeric = /^[^\d\p{L}]*[\d.,]+[^\d\p{L}]*$/u.test(t.text);
+      if (R > L || (R && R === L && numeric)) t.autoAlign = "right";
+      else if (C > 1 && !L && !R) t.autoAlign = "center";
+      else if (!L && !R && b.x0 > vp.width * 0.5 && maxR - b.x1 < vp.width * 0.03) t.autoAlign = "right";
     }
   }
 
-  async function renderPage(pageNum) {
-    const page = await pdfDoc.getPage(pageNum);
-    const dpr = window.devicePixelRatio || 1;
-    const cssViewport = page.getViewport({ scale: RENDER_SCALE });
-    const renderViewport = page.getViewport({ scale: RENDER_SCALE * dpr });
+  function currentEdit(t) { return (t.kind === "g" ? S.edits : S.patches).get(t.editKey); }
+  function alignSetting(t) { const e = currentEdit(t); return e ? e.align : "auto"; }
+  function effAlign(t, a) { return a === "left" || a === "right" || a === "center" ? a : t.autoAlign; }
 
-    const wrap = document.createElement("div");
-    wrap.className = "page-wrap";
-    wrap.style.width = cssViewport.width + "px";
-    wrap.style.height = cssViewport.height + "px";
-    wrap.dataset.page = pageNum;
-
-    const canvas = document.createElement("canvas");
-    canvas.width = renderViewport.width;
-    canvas.height = renderViewport.height;
-    canvas.style.width = cssViewport.width + "px";
-    canvas.style.height = cssViewport.height + "px";
-    wrap.appendChild(canvas);
-
-    const textLayer = document.createElement("div");
-    textLayer.className = "text-layer";
-    wrap.appendChild(textLayer);
-    main.appendChild(wrap);
-
-    const ctx = canvas.getContext("2d");
-    await page.render({ canvasContext: ctx, viewport: renderViewport }).promise;
-
-    const textContent = await page.getTextContent();
-
-    textContent.items.forEach((item, idx) => {
-      if (!item.str || item.str.length === 0) return;
-      const tx = pdfjsLib.Util.transform(cssViewport.transform, item.transform);
-      const fontHeight = Math.hypot(tx[2], tx[3]);
-      const left = tx[4];
-      const top = tx[5] - fontHeight;
-      const widthPx = item.width * cssViewport.scale;
-
-      const span = document.createElement("span");
-      span.className = "text-item";
-      span.contentEditable = "true";
-      span.spellcheck = false;
-      span.textContent = item.str;
-      span.style.left = left + "px";
-      span.style.top = top + "px";
-      span.style.height = fontHeight + "px";
-      span.style.minWidth = Math.max(widthPx, 8) + "px";
-      span.style.fontSize = fontHeight * 0.95 + "px";
-      span.style.fontFamily = "Helvetica, Arial, sans-serif";
-      span.dataset.original = item.str;
-      span.dataset.page = pageNum;
-      span.dataset.idx = idx;
-
-      const pdfFontSize = Math.hypot(item.transform[2], item.transform[3]);
-      span.dataset.pdfX = item.transform[4];
-      span.dataset.pdfY = item.transform[5];
-      span.dataset.pdfWidth = item.width;
-      span.dataset.pdfFontSize = pdfFontSize;
-      span.dataset.canvasX = left;
-      span.dataset.canvasY = top;
-      span.dataset.canvasW = widthPx;
-      span.dataset.canvasH = fontHeight;
-
-      span.addEventListener("focus", () => {
-        if (!span.classList.contains("edited")) {
-          eraseOriginalOnCanvas(canvas, span);
-        }
-      });
-      span.addEventListener("input", () => {
-        if (span.textContent !== span.dataset.original) {
-          span.classList.add("edited");
-          eraseOriginalOnCanvas(canvas, span);
-        } else {
-          span.classList.remove("edited");
-        }
-      });
-      span.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") { e.preventDefault(); span.blur(); }
-      });
-
-      textLayer.appendChild(span);
+  function makeSpan(t) {
+    const s = document.createElement("span");
+    s.className = "text-item";
+    try { s.contentEditable = "plaintext-only"; } catch (e) { /* older Firefox */ }
+    if (s.contentEditable !== "plaintext-only") s.contentEditable = "true";
+    s.spellcheck = false;
+    s.dataset.id = t.id;
+    const e = currentEdit(t);
+    s.textContent = e ? e.text : t.text;
+    t.span = s;
+    layoutSpan(t, alignSetting(t));
+    s.addEventListener("focus", () => onFocus(t));
+    s.addEventListener("blur", () => onBlur(t));
+    s.addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter") { ev.preventDefault(); s.blur(); }
+      else if (ev.key === "Escape") { ev.preventDefault(); s.textContent = t.focusText; t.pendingAlign = t.focusAlign; s.blur(); }
     });
+    s.addEventListener("paste", (ev) => {
+      ev.preventDefault();
+      const txt = (ev.clipboardData || window.clipboardData).getData("text").replace(/\s+/g, " ");
+      document.execCommand("insertText", false, txt);
+    });
+    return s;
   }
 
-  function eraseOriginalOnCanvas(canvas, span) {
-    if (span.dataset.erased === "1") return;
-    const ctx = canvas.getContext("2d");
-    const cssW = parseFloat(canvas.style.width) || canvas.width;
-    const ratio = canvas.width / cssW;
-    const x = parseFloat(span.dataset.canvasX) * ratio;
-    const y = parseFloat(span.dataset.canvasY) * ratio;
-    const w = parseFloat(span.dataset.canvasW) * ratio;
-    const h = parseFloat(span.dataset.canvasH) * ratio;
-    const pad = h * 0.2;
-    ctx.save();
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(x - pad, y - pad, w + pad * 2, h + pad * 2);
-    ctx.restore();
-    span.dataset.erased = "1";
+  function layoutSpan(t, align) {
+    const s = t.span, G = t.geo, a = effAlign(t, align);
+    const anchor = a === "right" ? G.e : a === "center" ? [(G.o[0] + G.e[0]) / 2, (G.o[1] + G.e[1]) / 2] : G.o;
+    const shift = a === "right" ? "-100%" : a === "center" ? "-50%" : "0px";
+    s.style.transform = `translate(${anchor[0]}px, ${anchor[1]}px) rotate(${G.ang}rad) translate(${shift}, ${-G.ascPx}px)`;
+    s.style.minWidth = Math.max(G.widthPx, 6) + "px";
+    s.style.height = s.style.lineHeight = Math.max(G.ascPx - G.descPx, 4) + "px";
+    s.style.fontSize = G.fontPx + "px";
+    s.style.textAlign = a;
+    const st = t.style;
+    s.style.fontFamily = st.mono ? '"Courier New", Courier, monospace'
+      : st.serif ? '"Times New Roman", Times, Georgia, serif' : '"Helvetica Neue", Helvetica, Arial, sans-serif';
+    s.style.fontWeight = st.bold ? "700" : "400";
+    s.style.fontStyle = st.italic ? "italic" : "normal";
+  }
+
+  /* ----- focus / commit ----- */
+  function onFocus(t) {
+    S.focused = t;
+    t.focusText = t.span.textContent;
+    t.focusAlign = t.pendingAlign = alignSetting(t);
+    if (t.kind === "p" && !t.sample) t.sample = sampleColors(t);
+    t.span.classList.add("editing");
+    t.span.style.color = t.kind === "p" ? rgbCss(t.sample.fg) : t.css;
+    // Until the page is redrawn without the original text, cover it with the
+    // colour actually behind it. For image text the patch stays (it is the edit).
+    t.span.style.background = rgbCss((t.sample || sampleColors(t)).bg);
+    showBar(t);
+    if (t.kind === "g") {
+      refresh(t.editKey).then(() => {
+        if (S.focused === t) t.span.style.background = "transparent";
+      });
+    }
+  }
+
+  function onBlur(t) {
+    if (S.focused !== t) return;
+    S.focused = null;
+    hideBar();
+    const s = t.span;
+    s.classList.remove("editing");
+    s.style.color = "";
+    s.style.background = "";
+    const text = s.textContent.replace(/[\r\n]+/g, " ").replace(/[​-‍﻿]/g, "").replace(/ /g, " ");
+    commit(t, text, t.pendingAlign);
+    refresh(null);
+  }
+
+  function commit(t, text, align) {
+    const map = t.kind === "g" ? S.edits : S.patches;
+    if (text === t.text) map.delete(t.editKey);
+    else map.set(t.editKey, { text, align });
+    for (const o of S.items.values()) {
+      if (o.editKey !== t.editKey || !o.span) continue;
+      if (o.span.textContent !== text) o.span.textContent = text;
+      o.span.classList.toggle("edited", map.has(t.editKey));
+      layoutSpan(o, map.has(t.editKey) ? align : "auto");
+    }
+    updateStatus();
+  }
+
+  function updateStatus() {
+    const n = S.edits.size + S.patches.size;
+    statusEl.textContent = S.name ? S.name + (n ? " — " + n + " edit" + (n === 1 ? "" : "s") : "") : "No file loaded";
+  }
+
+  /* ----- alignment bar ----- */
+  const bar = document.createElement("div");
+  bar.className = "edit-bar";
+  bar.innerHTML =
+    '<span>Align</span><button data-a="auto">Auto</button><button data-a="left">Left</button>' +
+    '<button data-a="center">Center</button><button data-a="right">Right</button>' +
+    '<i class="sep"></i><button data-a="revert">Revert</button>';
+  bar.addEventListener("mousedown", (e) => e.preventDefault());
+  bar.addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    const t = S.focused;
+    if (!b || !t) return;
+    if (b.dataset.a === "revert") { t.span.textContent = t.text; t.pendingAlign = "auto"; }
+    else t.pendingAlign = b.dataset.a;
+    layoutSpan(t, t.pendingAlign);
+    showBar(t);
+  });
+  function showBar(t) {
+    const P = S.pages[t.page];
+    if (bar.parentNode !== P.wrap) P.wrap.appendChild(bar);
+    bar.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.a === t.pendingAlign));
+    bar.querySelector('[data-a="auto"]').textContent = "Auto (" + t.autoAlign + ")";
+    const b = t.geo.box;
+    bar.style.left = Math.max(0, Math.min(b.x0, P.vp.width - bar.offsetWidth)) + "px";
+    bar.style.top = (b.y0 > 44 ? b.y0 - 40 : b.y1 + 6) + "px";
+  }
+  function hideBar() { bar.remove(); }
+
+  /* ----- colours under a piece of text ----- */
+  function sampleColors(t) {
+    const fallback = { bg: [1, 1, 1], fg: [0, 0, 0], ext: { l: 0, r: 0 } };
+    const P = S.pages[t.page];
+    if (!P || !P.canvas) return fallback;
+    try {
+      const c = P.canvas, k = c.width / parseFloat(c.style.width), b = t.geo.box, ring = 3;
+      const x0 = Math.max(0, Math.floor((b.x0 - ring) * k)), y0 = Math.max(0, Math.floor((b.y0 - ring) * k));
+      const x1 = Math.min(c.width, Math.ceil((b.x1 + ring) * k)), y1 = Math.min(c.height, Math.ceil((b.y1 + ring) * k));
+      const w = x1 - x0, h = y1 - y0;
+      if (w <= 0 || h <= 0) return fallback;
+      const d = c.getContext("2d").getImageData(x0, y0, w, h).data;
+      const r = Math.round(ring * k), outer = [], inner = [];
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        const i = (y * w + x) * 4, px = [d[i], d[i + 1], d[i + 2]];
+        (x < r || y < r || x >= w - r || y >= h - r ? outer : inner).push(px);
+      }
+      const med = (list, ch) => { const v = list.map((p) => p[ch]).sort((a, b) => a - b); return v.length ? v[v.length >> 1] : 255; };
+      const bg = [0, 1, 2].map((ch) => med(outer.length ? outer : inner, ch));
+      const dist = (p) => Math.abs(p[0] - bg[0]) + Math.abs(p[1] - bg[1]) + Math.abs(p[2] - bg[2]);
+      inner.sort((p, q) => dist(q) - dist(p));
+      const top = inner.slice(0, Math.max(1, Math.round(inner.length * 0.1)));
+      const fg = dist(top[0] || bg) > 60 ? [0, 1, 2].map((ch) => top.reduce((s, p) => s + p[ch], 0) / top.length) : [0, 0, 0];
+      // An OCR layer can be narrower than the printed word; find where the
+      // ink actually starts and ends so a patch covers all of it.
+      const ext = { l: 0, r: 0 };
+      if (t.kind === "p" && t.geo.horiz) {
+        const em = t.geo.fontPx * k, by0 = Math.max(0, Math.floor(b.y0 * k)), bh = Math.max(1, Math.min(c.height, Math.ceil(b.y1 * k)) - by0);
+        const scan = (from, dir) => {
+          const span = Math.round(3 * em), sx = dir > 0 ? from : Math.max(0, from - span);
+          const sw = Math.min(span, dir > 0 ? c.width - from : from - sx);
+          if (sw <= 0) return 0;
+          const sd = c.getContext("2d").getImageData(sx, by0, sw, bh).data;
+          const ink = (col) => {
+            for (let y = 0; y < bh; y++) {
+              const i = (y * sw + col) * 4;
+              if (Math.abs(sd[i] - bg[0]) + Math.abs(sd[i + 1] - bg[1]) + Math.abs(sd[i + 2] - bg[2]) > 90) return true;
+            }
+            return false;
+          };
+          let last = -1;
+          for (let n = 0; n < sw; n++) {
+            const col = dir > 0 ? n : sw - 1 - n;
+            if (ink(col)) last = n;
+            else if (n - last > (last < 0 ? 0.15 : 0.2) * em) break;
+          }
+          return last < 0 ? 0 : (last + 1) / k;
+        };
+        ext.r = scan(Math.ceil(b.x1 * k), 1);
+        ext.l = scan(Math.floor(b.x0 * k), -1);
+      }
+      return { bg: bg.map((v) => v / 255), fg: fg.map((v) => v / 255), ext };
+    } catch (e) {
+      return fallback;
+    }
+  }
+  function rgbCss(c) { return "rgb(" + c.map((v) => Math.round(v * 255)).join(",") + ")"; }
+
+  /* ----- building the edited PDF and redrawing ----- */
+  function pageSig(P, hiddenKey) {
+    const parts = [];
+    for (const t of P.items) {
+      const e = currentEdit(t);
+      if (e && e.text !== t.text) parts.push(t.editKey + "\u0002" + e.text + "\u0002" + e.align);
+      if (hiddenKey && t.editKey === hiddenKey) parts.push("hide:" + hiddenKey);
+    }
+    if (parts.length) parts.push("fonts:" + S.fontVersion);
+    return parts.join("\u0001");
+  }
+
+  function build(hiddenKey) {
+    const run = S.chain.then(async () => {
+      const warnings = await S.eng.apply(S.edits, hiddenKey);
+      await applyPatches(warnings);
+      const bytes = await S.doc.save({ updateFieldAppearances: false });
+      return { bytes, warnings };
+    });
+    S.chain = run.catch(() => {});
+    return run;
+  }
+
+  async function refresh(hiddenKey) {
+    const seq = ++S.seq;
+    const sigs = S.pages.map((P) => pageSig(P, hiddenKey));
+    const dirty = S.pages.filter((P, i) => P.sig !== sigs[i]);
+    if (!dirty.length) return;
+    try {
+      const { bytes, warnings } = await build(hiddenKey);
+      if (!hiddenKey && seq === S.seq) showNotice(warnings);
+      if (seq !== S.seq) return;
+      const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+      for (const P of dirty) {
+        if (seq !== S.seq) break;
+        await paint(P, await pdf.getPage(P.index + 1));
+        P.sig = sigs[P.index];
+      }
+      if (seq !== S.seq) { pdf.destroy(); return; }
+      if (S.pdf) S.pdf.destroy();
+      S.pdf = pdf;
+    } catch (err) {
+      console.error(err);
+      showError("Failed to apply edit: " + (err.message || err));
+    }
+  }
+
+  function showNotice(warnings) {
+    const patches = new Set(), subs = new Map();
+    for (const w of warnings) {
+      if (w.patch) { patches.add(w.patch); continue; }
+      const k = w.font + "\u0001" + (w.used || "");
+      if (!subs.has(k)) subs.set(k, new Set());
+      subs.get(k).add(w.ch);
+    }
+    noticeBanner.textContent = "";
+    for (const [k, chars] of subs) {
+      const [font, used] = k.split("\u0001");
+      const list = [...chars].map((c) => "“" + c + "”").join(", ");
+      const line = document.createElement("div");
+      line.textContent = used
+        ? `The PDF only embeds the characters it originally used from ${font}, so ${list} ${chars.size === 1 ? "was" : "were"} drawn with ${used}, the closest standard font. For an exact match, choose the ${font} font file: `
+        : `${list} can't be drawn with the PDF's ${font} font and ${chars.size === 1 ? "was" : "were"} left out. Choose the ${font} font file to add ${chars.size === 1 ? "it" : "them"}: `;
+      const b = document.createElement("button");
+      b.className = "secondary small";
+      b.textContent = "Choose font file…";
+      b.addEventListener("click", () => { fontInput.dataset.font = font; fontInput.click(); });
+      line.appendChild(b);
+      noticeBanner.appendChild(line);
+    }
+    for (const m of patches) {
+      const line = document.createElement("div");
+      line.textContent = m;
+      noticeBanner.appendChild(line);
+    }
+    noticeBanner.classList.toggle("show", subs.size + patches.size > 0);
+  }
+
+  const FONTKIT_URL = "https://cdn.jsdelivr.net/npm/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js";
+  const fontInput = document.createElement("input");
+  fontInput.type = "file";
+  fontInput.accept = ".ttf,.otf,font/ttf,font/otf";
+  fontInput.addEventListener("change", async () => {
+    const file = fontInput.files[0], font = fontInput.dataset.font;
+    fontInput.value = "";
+    if (!file || !font || !S.doc) return;
+    clearError();
+    showLoading("Loading font…");
+    try {
+      if (typeof fontkit === "undefined") {
+        await new Promise((ok, fail) => {
+          const sc = document.createElement("script");
+          sc.src = FONTKIT_URL;
+          sc.onload = ok;
+          sc.onerror = () => fail(new Error("couldn't load the font library from CDN"));
+          document.head.appendChild(sc);
+        });
+      }
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      fontkit.create(bytes);
+      S.doc.registerFontkit(fontkit);
+      S.fontFiles.set(font, bytes);
+      S.eng.customFonts.delete(font);
+      S.fontVersion++;
+      await refresh(null);
+    } catch (err) {
+      console.error(err);
+      showError("Couldn't use that font file: " + (err.message || err));
+    } finally {
+      hideLoading();
+    }
+  });
+
+  // Text that is part of an image (or otherwise can't be rewritten) is
+  // edited by drawing a patch in the sampled background colour, with the new
+  // text on top in the closest standard font, as its own content stream.
+  async function applyPatches(warnings) {
+    const byPage = new Map();
+    for (const [key, e] of S.patches) {
+      const t = [...S.items.values()].find((x) => x.kind === "p" && x.editKey === key);
+      if (!t || e.text === t.text) continue;
+      if (!byPage.has(t.page)) byPage.set(t.page, []);
+      byPage.get(t.page).push([t, e]);
+    }
+    const ctx = S.doc.context, te = new TextEncoder();
+    for (let i = 0; i < S.pages.length; i++) {
+      const list = byPage.get(i);
+      if (!list && !S.overlays.has(i)) continue;
+      const ref = ensureOverlay(i);
+      const res = S.eng.pageResources(i);
+      const ops = [];
+      for (const [t, e] of list || []) {
+        const q = t.quad, smp = t.sample || (t.sample = sampleColors(t));
+        const fontName = stdForStyle(t.style);
+        const font = await S.eng.std(fontName);
+        const name = S.eng.fontName(res, font.ref);
+        if (!name) continue;
+        let text = "";
+        for (const ch of e.text) {
+          try { font.encodeText(ch); text += ch; } catch (err) { warnings.push({ ch, font: fontName, used: null }); }
+        }
+        // Cover the printed word's full ink, and squeeze/stretch the new text
+        // the way the printed text is squeezed relative to the standard font.
+        const perPx = q.uEnd / Math.max(1e-6, t.geo.widthPx);
+        const x0 = -smp.ext.l * perPx, x1 = q.uEnd + smp.ext.r * perPx;
+        const natural = font.widthOfTextAtSize(t.text, q.size);
+        const hz = natural > 0 ? Math.min(140, Math.max(60, (100 * (x1 - x0)) / natural)) : 100;
+        const w = (font.widthOfTextAtSize(text, q.size) * hz) / 100;
+        const a = effAlign(t, e.align);
+        const ox = a === "right" ? x1 - w : a === "center" ? (x0 + x1 - w) / 2 : x0;
+        const pad = 0.08 * q.size;
+        const m = [q.dir[0], q.dir[1], -q.dir[1], q.dir[0], q.O[0], q.O[1]];
+        ops.push(
+          "q " + m.map(fmt).join(" ") + " cm " + smp.bg.map(fmt).join(" ") + " rg " +
+          [x0 - pad, q.desc * q.size - pad, x1 - x0 + 2 * pad, (q.asc - q.desc) * q.size + 2 * pad].map(fmt).join(" ") + " re f " +
+          "BT /" + name + " " + fmt(q.size) + " Tf " + fmt(hz) + " Tz " + smp.fg.map(fmt).join(" ") + " rg " + fmt(ox) + " 0 Td " +
+          hexOf(font.encodeText(text).asBytes()) + " Tj ET Q");
+        warnings.push({ patch: "Text that is part of an image can't be re-typed in its original font, so it was covered with a patch in the background colour and redrawn in " + fontName + "." });
+      }
+      ctx.assign(ref, ctx.flateStream(te.encode(ops.join("\n")), {}));
+    }
+  }
+  function ensureOverlay(i) {
+    if (S.overlays.has(i)) return S.overlays.get(i);
+    const ctx = S.doc.context, node = S.doc.getPage(i).node, te = new TextEncoder();
+    const raw = node.get(PDFName.of("Contents"));
+    const cv = raw instanceof PDFRef ? ctx.lookup(raw) : raw;
+    const parts = cv instanceof PDFArray ? cv.asArray() : raw ? [raw] : [];
+    const qRef = ctx.register(ctx.flateStream(te.encode("q\n"), {}));
+    const QRef = ctx.register(ctx.flateStream(te.encode("\nQ\n"), {}));
+    const oRef = ctx.register(ctx.flateStream(te.encode(""), {}));
+    node.set(PDFName.of("Contents"), ctx.obj([qRef, ...parts, QRef, oRef]));
+    S.overlays.set(i, oRef);
+    return oRef;
   }
 
   resetBtn.addEventListener("click", () => {
-    if (!originalBytes) return;
+    if (!S.original) return;
     if (!confirm("Discard all edits?")) return;
     showLoading("Reloading…");
-    loadPdf(originalBytes).finally(hideLoading);
+    loadPdf(S.original).then(updateStatus).catch((err) => showError("Failed to reload: " + (err.message || err))).finally(hideLoading);
   });
 
   saveBtn.addEventListener("click", async () => {
-    if (!originalBytes) return;
+    if (!S.doc) return;
+    if (S.focused) S.focused.span.blur();
     clearError();
     showLoading("Building PDF…");
     try {
-      const { PDFDocument, StandardFonts, rgb } = PDFLib;
-      const outDoc = await PDFDocument.load(originalBytes);
-      const font = await outDoc.embedFont(StandardFonts.Helvetica);
-      const pages = outDoc.getPages();
-
-      const spans = document.querySelectorAll(".text-item.edited");
-      spans.forEach((span) => {
-        const pageIndex = parseInt(span.dataset.page, 10) - 1;
-        const page = pages[pageIndex];
-        const pdfX = parseFloat(span.dataset.pdfX);
-        const pdfY = parseFloat(span.dataset.pdfY);
-        const pdfWidth = parseFloat(span.dataset.pdfWidth);
-        const pdfFontSize = parseFloat(span.dataset.pdfFontSize);
-        const newText = span.textContent;
-
-        const pad = pdfFontSize * 0.2;
-        page.drawRectangle({
-          x: pdfX - pad,
-          y: pdfY - pad,
-          width: pdfWidth + pad * 2,
-          height: pdfFontSize + pad * 2,
-          color: rgb(1, 1, 1),
-        });
-
-        let fontSize = pdfFontSize;
-        const measured = font.widthOfTextAtSize(newText, fontSize);
-        if (measured > pdfWidth && pdfWidth > 0) {
-          fontSize = fontSize * (pdfWidth / measured);
-        }
-        page.drawText(newText, {
-          x: pdfX,
-          y: pdfY,
-          size: fontSize,
-          font,
-          color: rgb(0, 0, 0),
-        });
-      });
-
-      const bytes = await outDoc.save();
+      const { bytes, warnings } = await build(null);
+      showNotice(warnings);
       const blob = new Blob([bytes], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      const base = (statusEl.textContent || "document.pdf").replace(/\.pdf$/i, "");
+      const base = (S.name || "document.pdf").replace(/\.pdf$/i, "");
       a.download = base + "-edited.pdf";
       document.body.appendChild(a);
       a.click();
